@@ -1,0 +1,397 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: An Amazon API Gateway REST API that integrates with an Amazon DynamoDB table.
+Parameters:
+  ReceiptsDynamoDBTableArn:
+    Type: String
+  JobsDynamoDBTableArn:
+    Type: String
+  AppName:
+    Type: String
+    Default: api-receipts
+    Description: Receipts Apis
+  StageName:
+    Type: String
+    Default: v1
+    Description: deploy
+  AuthorizerARN:
+    Type: String
+    Description: Cognito ARN
+  UpdateReceiptLambdaArn:
+    Type: String
+    Description: Update Receipt Lambda ARN
+
+
+Globals:
+  Api:
+    Cors:
+      AllowOrigin: "'*'"
+      AllowHeaders: "'Content-Type,x-api-key'"
+      AllowMethods: "'GET','PUT','POST','OPTIONS'"
+Resources:  
+  ReceiptsAPIGatewayRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+      Policies:
+        - PolicyName: APIGatewayReceiptsDynamoDBPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'lambda:InvokeFunction'
+                Resource: !Ref UpdateReceiptLambdaArn
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                # Including * in the resource Arn allows access to the DynamoDB table and indexes
+                Resource: 
+                  - !Sub
+                    - '${varReceiptsTableArn}*'
+                    - varReceiptsTableArn: !Ref ReceiptsDynamoDBTableArn
+                  - !Sub
+                    - '${varJobsTableArn}*'
+                    - varJobsTableArn: !Ref JobsDynamoDBTableArn
+  
+  CognitoReceiptAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      IdentitySource: method.request.header.Authorization
+      Name: CognitoAuthorizer
+      ProviderARNs: 
+        - !Ref AuthorizerARN
+      RestApiId: !Ref Api
+      Type: COGNITO_USER_POOLS
+
+  
+  Api:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: !Sub '${AppName}'
+      ApiKeySourceType: HEADER
+  ReceiptsResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: 'receipts'
+  
+  ReceiptResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref ReceiptsResource #!Ref UserReceiptsResource
+      PathPart: 'receipt'
+
+  SingleReceiptResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref ReceiptResource
+      PathPart: '{receiptid}'
+
+  ReceiptsMethodOptions:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref ReceiptsResource #UserReceiptsResource
+      HttpMethod: OPTIONS
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200 
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"              
+            ResponseTemplates: 
+              application/json: Empty
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+
+  SingleReceiptMethodOptions:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref SingleReceiptResource #UserReceiptResource
+      HttpMethod: OPTIONS
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200 
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"              
+            ResponseTemplates: 
+              application/json: Empty
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+
+  JobsResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: 'jobs'  
+
+  JobsMethodOptions:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref JobsResource #UserJobsResource
+      HttpMethod: OPTIONS
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200 
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"              
+            ResponseTemplates: 
+              application/json: Empty
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+          
+
+  ReceiptsMethodGet:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RestApiId: !Ref Api
+      ResourceId: !Ref ReceiptsResource #UserReceiptsResource
+      HttpMethod: GET
+      Integration:
+        Type: AWS
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:dynamodb:action/Query'
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestTemplates:
+          # Build the structure of the request that is sent when calling DynamoDB Query
+          # Using single-line, stringified JSON as the mapping template
+          # Use $util.urlDecode($input.params('pathname')) to decode if the url path value contains spaces
+          # A + or %20 may be used as a space in the url
+          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:v1\",\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"}}}"
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              # application/json: '{"statusCode": 200}'
+              # Modify the response of the DynamoDB Query before sending back to the caller
+              # Using single-line Velocity Template Language (VTL) code as the mapping template
+              # \n represents a new line, \t represents a tab character, \" represents a single quote character
+              application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"receipts\": [\n\t\t#foreach($field in $inputRoot.Items) {\n\t\t\t\"id\": \"$field.receipt_id.S\",\n\t\t\t\"job_id\": \"$field.job_id.S\",\n\t\t\t\"day\": \"$field.day.S\",\n\t\t\t\"shop\": \"$field.shop.M.name.S\",\n\t\t\t\"total\": \"$field.total.N\"\n\t\t}#if($foreach.hasNext),#end\n\t\t#end\n\t]\n}"
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+  
+  SingleReceiptMethodGet:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref SingleReceiptResource
+      HttpMethod: GET
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:dynamodb:action/Query'
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestParameters:
+          integration.request.path.receiptid: method.request.path.receiptid          
+        RequestTemplates:
+          # Build the structure of the request that is sent when calling DynamoDB Query
+          # Using single-line, stringified JSON as the mapping template
+          # Use $util.urlDecode($input.params('pathname')) to decode if the url path value contains spaces
+          # A + or %20 may be used as a space in the url
+          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:userid AND receipt_id=:receiptid\",\"ExpressionAttributeValues\":{\":userid\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"},\":receiptid\":{\"S\":\"$util.urlDecode($input.params('receiptid'))\"}}}"
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:              
+              # application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"receipt\": [\n\t\t#foreach($field in $inputRoot.Items) {\n\t\t\t\"id\": \"$field.receipt_id.S\",\n\t\t\t\"day\": \"$field.day.S\",\n\t\t\t\"shop\": \"$field.shop.M.name.S\",\n\t\t\t\"items\": [\n\t\t#foreach($fitem in $field.items.L) {\n\t\t\t\"name\": \"$fitem.M.name.S\"\n\t\t,\n\t\t\t\"vat\": \"$fitem.M.vat.N\"\n\t\t,\n\t\t\t\"price\": \"$fitem.M.price.N\"\n\t\t}#if($foreach.hasNext),#end\n\t\t#end\n\t],\n\t\t\t\"total\": \"$field.total.N\"\n\t\t}#if($foreach.hasNext),#end\n\t\t#end\n\t]\n}"
+              application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"receipt\": {\n\t\t\t\"id\": \"$inputRoot.Items[0].receipt_id.S\",\n\t\t\t\"day\": \"$inputRoot.Items[0].day.S\",\n\t\t\t\"shop\": {\n\t\t\"name\":\"$inputRoot.Items[0].shop.M.name.S\",\n\t\t\"owner\":\"$inputRoot.Items[0].shop.M.owner.S\",\n\t\t\"vat\":\"$inputRoot.Items[0].shop.M.vat.S\",\n\t\t\"phone_number\":\"$inputRoot.Items[0].shop.M.phone.S\",\n\t\t\"address\":\"$inputRoot.Items[0].shop.M.address.S\",\n\t\t\"city\":\"$inputRoot.Items[0].shop.M.city.S\"}, \n\t\t\t\"items\": [\n\t\t#foreach($fitem in $inputRoot.Items[0].items.L) {\n\t\t\t\"name\": \"$fitem.M.name.S\"\n\t\t,\n\t\t\t\"vat\": $fitem.M.vat.N\n\t\t,\n\t\t\t\"price\": $fitem.M.price.N\n\t\t}#if($foreach.hasNext),#end\n\t\t#end\n\t],\n\t\t\t\"total\": $inputRoot.Items[0].total.N\n\t\t}\n}"              
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+  
+  SingleReceiptMethodPut:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref SingleReceiptResource
+      HttpMethod: PUT
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
+          - lambdaArn: !Ref UpdateReceiptLambdaArn
+
+  JobsMethodGet:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref JobsResource
+      HttpMethod: GET
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      Integration:
+        Type: AWS
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:dynamodb:action/Query'
+        PassthroughBehavior: WHEN_NO_TEMPLATES        
+        RequestTemplates:
+          # Build the structure of the request that is sent when calling DynamoDB Query
+          # Using single-line, stringified JSON as the mapping template
+          # Use $util.urlDecode($input.params('pathname')) to decode if the url path value contains spaces
+          # A + or %20 may be used as a space in the url
+          application/json: "{\"TableName\":\"receipts-analyzer-jobs\",\"KeyConditionExpression\":\"user_id=:v1\",\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"}}}"          
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              # application/json: '{"statusCode": 200}'
+              # Modify the response of the DynamoDB Query before sending back to the caller
+              # Using single-line Velocity Template Language (VTL) code as the mapping template
+              # \n represents a new line, \t represents a tab character, \" represents a single quote character
+              # Example response: {"music":[{"id":"38bfb57e-a5a8-4fed-9a4f-391d66d5e987","artist":"The Beatles","album":"Abbey Road"}]}
+              # application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"receipts\": [\n\t\t#foreach($field in $inputRoot.Items) {\n\t\t\t\"id\": \"$field.receipt_id.S\",\n\t\t\t\"day\": \"$field.day.S\",\n\t\t\t\"items\": \"$field.items.LL\",\n\t\t\t\"total\": \"$field.total.N\"\n\t\t}#if($foreach.hasNext),#end\n\t\t#end\n\t]\n}"              
+              application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"jobs\": [\n\t\t#foreach($field in $inputRoot.Items) {\n\t\t\t\"job_id\": \"$field.job_id.S\",\n\t\t\t\"status\": \"$field.job_status.S\",\n\t\t\t\"submission_time\": \"$field.submission_time.S\",\n\t\t\t\"completed_time\": \"$field.completed_time.S\",\n\t\t\t\"file_path\": \"$field.file_path.S\"}#if($foreach.hasNext),#end\n\t\t#end\n\t]\n}"
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+  
+  UpdateReceiptLambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UpdateReceiptLambdaArn
+      Principal: apigateway.amazonaws.com
+      # note: if route *not* at API Gateway root, `SourceArn` would take the form of:
+      #               arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/${apiGatewayStageName}/${apiGatewayHTTPMethod}/PATH_PART
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/PUT/receipts/receipt/*   
+
+  ApiDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - ReceiptsMethodGet
+    Properties:
+      RestApiId: !Ref Api
+      StageName: !Sub '${StageName}'
+  ApiKey:
+    Type: 'AWS::ApiGateway::ApiKey'
+    DependsOn:
+      - ApiDeployment
+    Properties:
+      Enabled: true
+      Name: !Sub '${AppName}-apikey'
+      StageKeys:
+        - RestApiId: !Ref Api
+          StageName: !Sub '${StageName}'
+  ApiUsagePlan:
+    Type: 'AWS::ApiGateway::UsagePlan'
+    DependsOn:
+      - ApiDeployment
+    Properties:
+      ApiStages:
+        - ApiId: !Ref Api
+          Stage: !Sub '${StageName}'
+      Throttle:
+        RateLimit: 500
+        BurstLimit: 1000
+      UsagePlanName: !Sub '${AppName}-usage-plan'
+      Quota:
+        Limit: 10000
+        Period: MONTH
+  ApiUsagePlanKey:
+    Type: 'AWS::ApiGateway::UsagePlanKey'
+    Properties:
+      KeyType: API_KEY
+      KeyId: !Ref ApiKey
+      UsagePlanId: !Ref ApiUsagePlan
+Outputs:
+  ApiRootUrl:
+    Description: Root Url of the API
+    Value: !Sub 
+      - 'https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+      - ApiId: !Ref Api
+  ApiKeyId:
+    Description: API Key Id
+    Value: !Ref ApiKey
