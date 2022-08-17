@@ -1,0 +1,220 @@
+﻿@page "/receipts"
+@page "/receipts/{JobId}"
+@using Model
+@using Services
+@using System.Net.Http.Headers
+@using System.Globalization
+@using System.Threading
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject TokenService TokenService
+@inject ReceiptQuery Query
+@inject JobsQuery JobsQuery
+@implements IDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<h1>Receipts</h1>
+
+<div class="file-input-group input-group mb-2">
+    <div class="custom-file">
+        <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
+        <label class="custom-file-label" for="inputGroupFile01">Upload Receipt</label>
+    </div>
+</div>
+
+@if (loadingMessage != null)
+{
+    <p class="loading"><em>@loadingMessage</em></p>
+}
+
+@if (errorMessage != null)
+{
+    <p class="error"><em>@errorMessage</em></p>
+}
+
+<div class="mb-2">
+    <input id="monthFilter" alt="Filter by month" type="month" @oninput="@(e=>FilterByMonth(e.Value.ToString() ?? string.Empty))"
+        class="form-control col-xs-8 col-sm-4" placeholder="Select month" />
+</div>
+
+<div class="mb-2">
+    <button type="button" class="btn btn-primary" title="Refresh Receipts list" @onclick="@(e=>Refresh())">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+    <NavLink class="btn btn-primary" href="stats">
+        <i class="fas fa-chart-area"></i>
+    </NavLink>
+</div>
+
+<hr />
+@if (receipts == null)
+{
+    <p class="loading"><em>Loading...</em></p>
+}
+else
+{
+    <ReceiptApp.Components.ReceiptsTable Receipts="receipts"> </ReceiptApp.Components.ReceiptsTable>
+}
+
+@code {
+
+    [Parameter]
+    public string JobId { get; set; }
+    public string MonthFilter { get; set; } = "";
+    public string loadingMessage { get; set; }
+    public string errorMessage { get; set; }
+    private IEnumerable<ReceiptListItem> all_receipts;
+    private IEnumerable<ReceiptListItem> receipts;
+
+    private Timer _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ClearMessage();
+        ClearErrorMessage();
+
+        await Refresh();
+
+        StartCheckingForJobs();
+    }
+
+    public async Task Refresh()
+    {
+        CultureInfo provider = CultureInfo.InvariantCulture;
+
+        all_receipts = (await Query.GetAll())
+        .Select(r => new ReceiptListItem(r.Id, r.JobId, DateTime.ParseExact(r.Day, "MM/dd/yyyy", provider), r.Tags, r.Shop,
+        r.Total)).OrderByDescending(r => r.day);
+
+        if (all_receipts.Any() && !string.IsNullOrEmpty(JobId))
+        {
+            all_receipts = all_receipts.Where(r => r.JobId == JobId);
+
+        }
+
+        receipts = all_receipts.Select(r => r);
+
+        FilterByMonth(MonthFilter);
+    }
+    private void FilterByMonth(string month)
+    {
+        loadingMessage = string.Empty;
+        Console.WriteLine(month);
+        if (!string.IsNullOrWhiteSpace(month))
+        {
+            MonthFilter = month;
+            if (DateTime.TryParse(month, out DateTime monthYear))
+            {
+                receipts = all_receipts.Where(r => r.day.Month == monthYear.Month && r.day.Year == monthYear.Year);
+            }
+        }
+        else
+        {
+            MonthFilter = string.Empty;
+            receipts = all_receipts;
+        }
+    }  
+
+    private async Task CheckJobs()
+    {
+        var anySubmitted = (await JobsQuery.GetAll()).Any(job => job.Status == "SUBMITTED");
+
+        if (anySubmitted)
+        {
+            SetProcessing();
+        }
+        else
+        {
+            ClearMessage();
+        }
+    }
+
+    private void StartCheckingForJobs()
+    {
+        _timer = new Timer((_) =>
+        {
+            InvokeAsync(async () =>
+    {
+    await CheckJobs();
+            });
+            // Note that the following line is necessary because otherwise
+            // Blazor would not recognize the state change and not refresh the UI
+            this.StateHasChanged();
+        }, new System.Threading.AutoResetEvent(false), 1000, 5000);
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        SetUploading();
+        var request = new HttpRequestMessage(HttpMethod.Get, "upload-receipt");
+        request.Headers.Authorization = await TokenService.BuildAuthHeader();
+
+        var maxFileSize = 512000 * 20;
+        try
+        {
+            var response = (await Http.SendAsync(request));
+            if (response.IsSuccessStatusCode)
+            {
+                var url = (await response.Content.ReadFromJsonAsync<ApiResponse>())?.UploadURL ?? throw new Exception("Unable to Upload the file");
+
+                Console.WriteLine(e.File.Name);
+
+                using var content = new MultipartFormDataContent();
+
+                var fileContent = new StreamContent(e.File.OpenReadStream(maxFileSize));
+
+                content.Add(content: fileContent);
+
+                using var c = new ByteArrayContent(await fileContent.ReadAsByteArrayAsync());
+                c.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+
+                using var h = new HttpClient();
+
+                var putResponse = await h.PutAsync(url, c);
+
+                var newUploadResults = await putResponse.Content.ReadAsStringAsync();
+
+                Console.WriteLine(newUploadResults);
+                SetProcessing();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void SetProcessing()
+    {
+        loadingMessage = "Processing receipt...";
+    }
+
+    private void SetUploading()
+    {
+        loadingMessage = "Uploading receipt...";
+    }
+
+    private void ClearMessage()
+    {
+        loadingMessage = string.Empty;
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = string.Empty;
+    }
+
+    
+
+    public class ApiResponse
+    {
+        public string Key { get; set; }
+        public string UploadURL { get; set; }
+    }
+
+    void IDisposable.Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

@@ -1,0 +1,42 @@
+@using Model
+@using Services
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">Date</th>
+            <th scope="col">Kind</th>
+            <th scope="col">Shop</th>
+            <th scope="col">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var receipt in Receipts)
+        {
+            <tr>
+                <td>
+                    <NavLink title="@receipt.id.Substring(0,8)" class="nav-link" href=@($"receipt/{receipt.id}")>
+                        <i class="fas fa-eye"></i>
+                    </NavLink>
+                </td>
+                <td>@receipt.day.ToShortDateString()</td>
+                <td title="@BuildTagsSummary(receipt.tags)">
+                    <i class="@TagsService.GetKindIcon(receipt.tags)"></i>
+                </td>
+                <td>@receipt.shop</td>
+                <td>@receipt.total</td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    [Parameter]
+    public IEnumerable<ReceiptListItem> Receipts { get; set; }
+
+    private string BuildTagsSummary(IEnumerable<string> tags)
+    {
+        return tags != null ? string.Join(" ", tags) : string.Empty;
+    }
+
+
+}

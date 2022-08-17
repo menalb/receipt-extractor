@@ -1,0 +1,96 @@
+﻿@page "/jobs"
+@using System.Threading
+@using Model
+@using Services
+@inject JobsQuery Query
+@implements IDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<h1>My Receipt Jobs</h1>
+
+@if (jobs == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Status</th>
+                @* <th scope="col">Path</th> *@
+                <th scope="col">Submission</th>
+                <th scope="col">Completed</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in jobs)
+            {
+                <tr>
+                    <td>
+                        <NavLink class="nav-link" href=@($"receipts/{job.JobId}")>
+                            @job.JobId.Substring(0,8)
+                        </NavLink>
+                    </td>
+                    <td>
+                        @if (IsSubmitted(job.Status))
+                        {
+                            <div class="spinner-border text-info" role="status">
+                                <span class="sr-only">Analyzing</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="@StatusCss(job.Status)">@job.Status</span>
+                        }
+                    </td>
+                    @* <td>@job.FilePath</td> *@
+                    <td>@job.SubmissionTime</td>
+                    <td>@job.CompletedTime</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Job> jobs;
+    private const string Submitted_status = "SUBMITTED";
+    private const string Succeded_status = "SUCCEEDED";
+
+    private Timer _timer;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobsList();
+        StartAutoRefresh();
+    }
+
+    private async Task LoadJobsList()
+    {
+        jobs = (await Query.GetAll()).OrderByDescending(job=>job.SubmissionTime);
+    }
+
+    private bool IsSubmitted(string status) => status == Submitted_status;
+
+    private string StatusCss(string status) => status == Succeded_status ? "text-success" : "text-warning";
+
+    private void StartAutoRefresh()
+    {
+        _timer = new Timer((_) =>
+        {
+            InvokeAsync(async () =>
+    {
+    await LoadJobsList();
+            });
+            // Note that the following line is necessary because otherwise
+            // Blazor would not recognize the state change and not refresh the UI
+            this.StateHasChanged();
+        }, new System.Threading.AutoResetEvent(false), 1000, 5000);
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

@@ -1,0 +1,94 @@
+@page "/stats"
+@using Blazorise.Charts
+@using Model
+@using Services
+@using System.Globalization
+@inject ReceiptQuery Query
+
+<Button Color="Color.Primary" Clicked="@(async () => await HandleRedraw())">Refresh</Button>
+
+<LineChart @ref="lineChart" TItem="ReceiptTotal" Options="@lineChartOptions" />
+
+@code {
+    LineChart<ReceiptTotal> lineChart;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        await lineChart.AddDataSet(GetLineChartDataset());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+            //Blazorise.Background b = new ();
+        }
+    }
+
+    async Task HandleRedraw()
+    {
+        await lineChart.Clear();
+
+        await LoadData();
+
+        await lineChart.AddDataSet(GetLineChartDataset());
+
+    }
+
+    LineChartOptions lineChartOptions = new()
+    {
+        Parsing = new ChartParsing
+        {
+            XAxisKey = "day",
+            YAxisKey = "total",
+        }
+    };
+
+    LineChartDataset<ReceiptTotal> GetLineChartDataset()
+    {
+        return new LineChartDataset<ReceiptTotal>
+        {
+            Label = "totals",
+            Data = AllReceipts,
+            BackgroundColor = backgroundColors,
+            BorderColor = borderColors,
+            Fill = true,
+            PointRadius = 3,
+            CubicInterpolationMode = "monotone",
+        };
+    }
+
+    List<string> backgroundColors = new List<string> {
+ChartColor.FromRgba(253, 126, 20, 0.2f),
+ChartColor.FromRgba( 54, 162, 235, 0.2f ),
+ChartColor.FromRgba( 255, 206, 86, 0.2f ),
+ChartColor.FromRgba( 75, 192, 192, 0.2f ),
+ChartColor.FromRgba( 255, 159, 64, 0.2f )
+};
+
+    List<string> borderColors = new List<string> {
+ChartColor.FromRgba(253, 126, 20, 1f),
+ChartColor.FromRgba( 54, 162, 235, 1f ),
+ChartColor.FromRgba( 255, 206, 86, 1f ), 
+ChartColor.FromRgba( 75, 192, 192, 1f ),
+ChartColor.FromRgba( 255, 159, 64, 1f )
+};
+
+    public async Task LoadData()
+    {
+        CultureInfo provider = CultureInfo.InvariantCulture;
+
+        var all_receipts = (await Query.GetAll())
+
+        .GroupBy(g => DateTime.ParseExact(g.Day, "MM/dd/yyyy", provider).Date)
+        .Select(g => new ReceiptTotal(g.Key, g.Sum(x =>
+         x.Total))).OrderBy(x=>x.day);
+
+        AllReceipts = all_receipts.ToList();
+    }
+    List<ReceiptTotal> AllReceipts = new List<ReceiptTotal>();
+    public record ReceiptTotal(DateTime day, decimal total);
+}
