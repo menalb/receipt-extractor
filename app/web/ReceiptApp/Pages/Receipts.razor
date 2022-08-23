@@ -14,7 +14,6 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <h1>Receipts</h1>
-
 <div class="file-input-group input-group mb-2">
     <div class="custom-file">
         <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
@@ -44,6 +43,9 @@
     <NavLink class="btn btn-primary" href="stats">
         <i class="fas fa-chart-area"></i>
     </NavLink>
+    @if(LoadingReceipts){
+    <ReceiptApp.Components.LoaderNotification OnReceivedNotification="Refresh"/>
+    }
 </div>
 
 <hr />
@@ -65,6 +67,7 @@ else
     public string errorMessage { get; set; }
     private IEnumerable<ReceiptListItem> all_receipts;
     private IEnumerable<ReceiptListItem> receipts;
+        private bool LoadingReceipts = false;
 
     private Timer _timer;
 
@@ -171,7 +174,9 @@ else
                 using var h = new HttpClient();
 
                 var putResponse = await h.PutAsync(url, c);
-
+                
+                LoadingReceipts=true;
+                
                 var newUploadResults = await putResponse.Content.ReadAsStringAsync();
 
                 Console.WriteLine(newUploadResults);

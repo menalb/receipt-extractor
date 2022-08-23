@@ -20,6 +20,8 @@ namespace ReceiptApp
                 BaseAddress = new Uri(builder.Configuration["Api:Uri"] ?? throw new ArgumentNullException("Invalid API Uri in configuration"))
             });
 
+            builder.Services.AddSingleton<WebSocketApiConfig>(new WebSocketApiConfig{Uri= builder.Configuration["WebSocketApi:Uri"] ?? throw new ArgumentNullException("Invalid Websocket API Uri in configuration") } );
+
             builder.Services.AddTransient<TokenService>();
             builder.Services.AddTransient<ReceiptApi>();
             builder.Services.AddSingleton<ReceiptExport>();
@@ -47,5 +49,10 @@ namespace ReceiptApp
 
             await builder.Build().RunAsync();
         }
+    }
+
+    public class WebSocketApiConfig
+    {
+        public string Uri { get; set; } = "";
     }
 }

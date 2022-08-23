@@ -1,0 +1,80 @@
+@using System.Net.WebSockets
+@using System.Text
+@using System.Text.Json
+@inject Services.TokenService tokenService
+@inject WebSocketApiConfig websocketConfig
+@implements IDisposable
+
+@if (webSocket.State == WebSocketState.Open)
+{
+    <em>Connected!</em>
+    <pre>
+        @log
+                </pre>
+}
+
+@code {
+
+    [Parameter]
+    public EventCallback<string> OnReceivedNotification { get; set; }
+
+    CancellationTokenSource disposalTokenSource = new CancellationTokenSource();
+    ClientWebSocket webSocket = new ClientWebSocket();
+    string username = "";
+
+    string log = "";
+
+    string wssUri { get => websocketConfig.Uri; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Connect();
+    }
+
+    async Task Connect()
+    {
+        webSocket = new ClientWebSocket();
+        disposalTokenSource = new CancellationTokenSource();
+        var token = await tokenService.GetIdToken();
+        Console.WriteLine(wssUri + "?idToken=" + token);
+        await webSocket.ConnectAsync(new Uri(wssUri + "?idToken=" + token), disposalTokenSource.Token);
+        _ = ReceiveLoop();
+    }
+
+    async Task ReceiveLoop()
+    {
+        var buffer = new ArraySegment<byte>(new byte[1024]);
+        while (!disposalTokenSource.IsCancellationRequested)
+        {
+            // Note that the received block might only be part of a larger message. If this applies in your scenario,
+            // check the received.EndOfMessage and consider buffering the blocks until that property is true.
+            // Or use a higher-level library such as SignalR.
+            var received = await webSocket.ReceiveAsync(buffer, disposalTokenSource.Token);
+            var receivedAsText = Encoding.UTF8.GetString(buffer.Array, 0, received.Count);
+
+            var message = System.Text.Json.JsonSerializer.Deserialize<NotificationMessage>(receivedAsText);
+            log += $"Received: {message.receiptId}\n";
+            await OnReceivedNotification.InvokeAsync(message.receiptId);
+
+            StateHasChanged();
+        }
+    }
+
+    async Task Disconnect()
+    {
+        disposalTokenSource.Cancel();
+        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        disposalTokenSource.Cancel();
+        _ = webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", CancellationToken.None);
+    }
+
+    public class NotificationMessage
+    {
+        public string userId { get; set; } = "";
+        public string receiptId { get; set; } = "";
+    }
+}
