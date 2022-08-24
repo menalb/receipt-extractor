@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: Template for SNS notification.
+
+Parameters:
+  AnalyzeNotiticationTopicName:
+    Type: String
+    Description: Name of the topic of the notification
+    MinLength: "0"
+  NotificationTableName:
+    Type: String
+    Description: Notification table name
+    MinLength: "0"
+  NotificationApiUrl:
+    Type: String
+    Description: "Notification Api URL"
+    MinLength : "0"
+  ReceiptExtractorWebSocketApiId:
+    Type: String
+    Description: "Notification Api Id"
+    MinLength : "0"
+
+Resources:
+  SNSNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref AnalyzeNotiticationTopicName
+
+  AnalyzerNotificationFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      Handler: "notifier::notifier.Function::FunctionHandler"
+      Runtime: dotnet6
+      CodeUri: ""
+      Description: Handle Notify result
+      MemorySize: 256
+      Timeout: 600
+      Environment:
+        Variables:
+          NOTIFICATION_TABLE_NAME: !Ref NotificationTableName
+          NOTIFICATION_API_URL: !Ref NotificationApiUrl
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref NotificationTableName
+      - Statement:
+        - Effect: Allow
+          Action:
+          - 'execute-api:ManageConnections'
+          Resource:
+          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ReceiptExtractorWebSocketApiId}/*'
+
+  Subscription:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      Endpoint: !GetAtt
+        - AnalyzerNotificationFunction
+        - Arn
+      Protocol: lambda
+      TopicArn: !Ref SNSNotificationTopic
+
+  SNSInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AnalyzerNotificationFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SNSNotificationTopic
+
+Outputs:
+  Bucket:
+    Value: !Ref SNSNotificationTopic
+    Description: Topic.
