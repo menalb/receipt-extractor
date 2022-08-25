@@ -2,18 +2,25 @@
 @page "/receipts/{JobId}"
 @using Model
 @using Services
-@using System.Net.Http.Headers
 @using System.Globalization
 @using System.Threading
+@using ReceiptApp.Components
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject TokenService TokenService
 @inject ReceiptQuery Query
-@inject JobsQuery JobsQuery
+@inject UploaderService Uploader
 @implements IDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<h1>Receipts</h1>
+<h1 class="receipts-header">
+    Receipts
+    <span class="header-actions">
+        <button type="button" class="btn btn-primary" title="Refresh Receipts list" @onclick="@(e=>Refresh())">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </span>
+</h1>
 <div class="file-input-group input-group mb-2">
     <div class="custom-file">
         <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
@@ -32,21 +39,17 @@
 }
 
 <div class="mb-2">
-    <input id="monthFilter" alt="Filter by month" type="month" @oninput="@(e=>FilterByMonth(e.Value.ToString() ?? string.Empty))"
-        class="form-control col-xs-8 col-sm-4" placeholder="Select month" />
+    <input id="monthFilter" alt="Filter by month" type="month"
+        @oninput="@(e=>FilterByMonth(e.Value?.ToString() ?? string.Empty))" class="form-control col-xs-8 col-sm-4"
+        placeholder="Select month" />
 </div>
 
-<div class="mb-2">
-    <button type="button" class="btn btn-primary" title="Refresh Receipts list" @onclick="@(e=>Refresh())">
-        <i class="fas fa-sync-alt"></i>
-    </button>
-    <NavLink class="btn btn-primary" href="stats">
-        <i class="fas fa-chart-area"></i>
-    </NavLink>
-    @if(LoadingReceipts){
-    <ReceiptApp.Components.LoaderNotification OnReceivedNotification="Refresh"/>
-    }
-</div>
+@if (LoadingReceipts)
+{
+    <div class="mb-2">
+        <LoaderNotification OnReceivedNotification="Refresh" />
+    </div>
+}
 
 <hr />
 @if (receipts == null)
@@ -55,21 +58,21 @@
 }
 else
 {
-    <ReceiptApp.Components.ReceiptsTable Receipts="receipts"> </ReceiptApp.Components.ReceiptsTable>
+    <ReceiptsTable Receipts="receipts" />
 }
 
 @code {
 
     [Parameter]
-    public string JobId { get; set; }
+    public string JobId { get; set; } = "";
     public string MonthFilter { get; set; } = "";
-    public string loadingMessage { get; set; }
-    public string errorMessage { get; set; }
-    private IEnumerable<ReceiptListItem> all_receipts;
-    private IEnumerable<ReceiptListItem> receipts;
-        private bool LoadingReceipts = false;
+    public string? loadingMessage { get; set; }
+    public string errorMessage { get; set; } = "";
+    private IEnumerable<ReceiptListItem> all_receipts = new List<ReceiptListItem>();
+    private IEnumerable<ReceiptListItem> receipts = new List<ReceiptListItem>();
+    private bool LoadingReceipts = false;
 
-    private Timer _timer;
+    private Timer? _timer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,8 +80,6 @@ else
         ClearErrorMessage();
 
         await Refresh();
-
-        StartCheckingForJobs();
     }
 
     public async Task Refresh()
@@ -86,13 +87,17 @@ else
         CultureInfo provider = CultureInfo.InvariantCulture;
 
         all_receipts = (await Query.GetAll())
-        .Select(r => new ReceiptListItem(r.Id, r.JobId, DateTime.ParseExact(r.Day, "MM/dd/yyyy", provider), r.Tags, r.Shop,
-        r.Total)).OrderByDescending(r => r.day);
+        .Select(r => new ReceiptListItem(
+        r.Id ?? "",
+        r.JobId ?? "",
+        DateTime.ParseExact(r.Day ?? "", "MM/dd/yyyy", provider),
+        r.Tags ?? new string[] { }, r.Shop ?? "",
+        r.Total)
+        ).OrderByDescending(r => r.day);
 
         if (all_receipts.Any() && !string.IsNullOrEmpty(JobId))
         {
             all_receipts = all_receipts.Where(r => r.JobId == JobId);
-
         }
 
         receipts = all_receipts.Select(r => r);
@@ -116,72 +121,20 @@ else
             MonthFilter = string.Empty;
             receipts = all_receipts;
         }
-    }  
-
-    private async Task CheckJobs()
-    {
-        var anySubmitted = (await JobsQuery.GetAll()).Any(job => job.Status == "SUBMITTED");
-
-        if (anySubmitted)
-        {
-            SetProcessing();
-        }
-        else
-        {
-            ClearMessage();
-        }
-    }
-
-    private void StartCheckingForJobs()
-    {
-        _timer = new Timer((_) =>
-        {
-            InvokeAsync(async () =>
-    {
-    await CheckJobs();
-            });
-            // Note that the following line is necessary because otherwise
-            // Blazor would not recognize the state change and not refresh the UI
-            this.StateHasChanged();
-        }, new System.Threading.AutoResetEvent(false), 1000, 5000);
     }
 
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {
-        SetUploading();
-        var request = new HttpRequestMessage(HttpMethod.Get, "upload-receipt");
-        request.Headers.Authorization = await TokenService.BuildAuthHeader();
-
-        var maxFileSize = 512000 * 20;
+        ClearErrorMessage();
+        SetProcessing();
+        LoadingReceipts = true;
         try
         {
-            var response = (await Http.SendAsync(request));
-            if (response.IsSuccessStatusCode)
-            {
-                var url = (await response.Content.ReadFromJsonAsync<ApiResponse>())?.UploadURL ?? throw new Exception("Unable to Upload the file");
+            await Uploader.Upload(e.File);
 
-                Console.WriteLine(e.File.Name);
+            await Task.Delay(3000);
 
-                using var content = new MultipartFormDataContent();
-
-                var fileContent = new StreamContent(e.File.OpenReadStream(maxFileSize));
-
-                content.Add(content: fileContent);
-
-                using var c = new ByteArrayContent(await fileContent.ReadAsByteArrayAsync());
-                c.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-
-                using var h = new HttpClient();
-
-                var putResponse = await h.PutAsync(url, c);
-                
-                LoadingReceipts=true;
-                
-                var newUploadResults = await putResponse.Content.ReadAsStringAsync();
-
-                Console.WriteLine(newUploadResults);
-                SetProcessing();
-            }
+            ClearMessage();
         }
         catch (Exception ex)
         {
@@ -195,11 +148,6 @@ else
         loadingMessage = "Processing receipt...";
     }
 
-    private void SetUploading()
-    {
-        loadingMessage = "Uploading receipt...";
-    }
-
     private void ClearMessage()
     {
         loadingMessage = string.Empty;
@@ -208,14 +156,6 @@ else
     private void ClearErrorMessage()
     {
         errorMessage = string.Empty;
-    }
-
-    
-
-    public class ApiResponse
-    {
-        public string Key { get; set; }
-        public string UploadURL { get; set; }
     }
 
     void IDisposable.Dispose()

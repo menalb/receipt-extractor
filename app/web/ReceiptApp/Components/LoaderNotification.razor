@@ -1,16 +1,12 @@
 @using System.Net.WebSockets
 @using System.Text
-@using System.Text.Json
 @inject Services.TokenService tokenService
 @inject WebSocketApiConfig websocketConfig
 @implements IDisposable
 
-@if (webSocket.State == WebSocketState.Open)
+@if (webSocket.State == WebSocketState.Open && ShowLog)
 {
-    <em>Connected!</em>
-    <pre>
-        @log
-                </pre>
+    <pre>@log</pre>
 }
 
 @code {
@@ -21,6 +17,7 @@
     CancellationTokenSource disposalTokenSource = new CancellationTokenSource();
     ClientWebSocket webSocket = new ClientWebSocket();
     string username = "";
+    private bool ShowLog { get; set; } = false;
 
     string log = "";
 
@@ -53,8 +50,11 @@
             var receivedAsText = Encoding.UTF8.GetString(buffer.Array, 0, received.Count);
 
             var message = System.Text.Json.JsonSerializer.Deserialize<NotificationMessage>(receivedAsText);
+                ShowLog = true;
             log += $"Received: {message.receiptId}\n";
             await OnReceivedNotification.InvokeAsync(message.receiptId);
+            await Task.Delay(3000);
+            ShowLog = false;
 
             StateHasChanged();
         }

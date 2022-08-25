@@ -7,17 +7,8 @@
             <span class="actions">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                     <i class="fas fa-home d-none d-sm-inline"></i> Home
-                </NavLink>
-                <AuthorizeView>
-                    <NavLink title="Receipts" class="nav-link" href="receipts">
-                        <i class="fas fa-receipt d-none d-sm-inline"></i> Receipts
-                    </NavLink>
-                    <!--
-                    <NavLink title="Processing Receips" class="nav-link" href="jobs">
-                        <i class="fas fa-cog d-none d-sm-inline"></i> Jobs
-                    </NavLink>
-                    -->
-                </AuthorizeView>
+                </NavLink>                
+                <AuthorizedNavMenu />
             </span>
             <span class="login">
                 <LoginDisplay />

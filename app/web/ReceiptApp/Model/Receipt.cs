@@ -58,7 +58,7 @@ namespace ReceiptApp.Model
 
     public class ReceiptsResult
     {
-        public IEnumerable<ReceiptSummary> Receipts { get; set; }
+        public IEnumerable<ReceiptSummary> Receipts { get; set; } = new List<ReceiptSummary>();
     }
 
     public class ReceiptSummary

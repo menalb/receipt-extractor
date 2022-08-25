@@ -24,14 +24,14 @@
             <NavLink class="nav-link" href="receipts">
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Receipts
             </NavLink>
-        </li>
+        </li>        
     </ul>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
 
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : string.Empty;
 
     private void ToggleNavMenu()
     {
