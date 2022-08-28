@@ -2,30 +2,41 @@
 @using System.Text
 @inject Services.TokenService tokenService
 @inject WebSocketApiConfig websocketConfig
+@inject ReceiptLoaderState state
 @implements IDisposable
 
 @if (webSocket.State == WebSocketState.Open && ShowLog)
 {
-    <pre>@log</pre>
+    <NavLink title="Go to receipt" class="nav-link" href=@($"receipt/{receiptId}")>
+        Loaded receipt, click here to edit.
+    </NavLink>
+
 }
 
 @code {
 
-    [Parameter]
-    public EventCallback<string> OnReceivedNotification { get; set; }
+    // [Parameter]
+    // public EventCallback<string> OnReceivedNotification { get; set; }
 
     CancellationTokenSource disposalTokenSource = new CancellationTokenSource();
     ClientWebSocket webSocket = new ClientWebSocket();
     string username = "";
     private bool ShowLog { get; set; } = false;
 
-    string log = "";
+    string receiptId = "";
 
     string wssUri { get => websocketConfig.Uri; }
 
     protected override async Task OnInitializedAsync()
     {
-        await Connect();
+        state.OnLoadReceiptStarted = async s =>
+        {
+            if (webSocket == null || webSocket.State != WebSocketState.Open)
+            {
+                Console.WriteLine("Connecting");
+                await Connect();
+            }
+        };
     }
 
     async Task Connect()
@@ -50,12 +61,14 @@
             var receivedAsText = Encoding.UTF8.GetString(buffer.Array, 0, received.Count);
 
             var message = System.Text.Json.JsonSerializer.Deserialize<NotificationMessage>(receivedAsText);
-                ShowLog = true;
-            log += $"Received: {message.receiptId}\n";
-            await OnReceivedNotification.InvokeAsync(message.receiptId);
-            await Task.Delay(3000);
+            ShowLog = true;
+            receiptId = message.receiptId;
+            StateHasChanged();
+            Console.WriteLine($"Received: {message.receiptId}\n");
+            // await OnReceivedNotification.InvokeAsync(message.receiptId);
+            state.OnLoadReceiptEnded.Invoke(message.receiptId);
+            await Task.Delay(5000);
             ShowLog = false;
-
             StateHasChanged();
         }
     }

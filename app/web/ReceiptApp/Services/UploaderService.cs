@@ -8,10 +8,13 @@ namespace ReceiptApp.Services
         private readonly TokenService _tokenService;
         private readonly HttpClient _httpClient;
 
-        public UploaderService(TokenService tokenService, HttpClient httpClient)
+        private readonly ReceiptLoaderState _state;
+
+        public UploaderService(TokenService tokenService, HttpClient httpClient, ReceiptLoaderState state)
         {
             _tokenService = tokenService;
             _httpClient = httpClient;
+            _state = state;
         }
 
         public async Task Upload(IBrowserFile file)
@@ -44,6 +47,8 @@ namespace ReceiptApp.Services
                 var putResponse = await h.PutAsync(url, c);
 
                 var newUploadResults = await putResponse.Content.ReadAsStringAsync();
+
+                _state.SetLoading(newUploadResults);
 
                 Console.WriteLine(newUploadResults);
             }

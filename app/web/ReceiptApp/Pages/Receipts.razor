@@ -10,6 +10,7 @@
 @inject TokenService TokenService
 @inject ReceiptQuery Query
 @inject UploaderService Uploader
+@inject ReceiptLoaderState state
 @implements IDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -44,13 +45,6 @@
         placeholder="Select month" />
 </div>
 
-@if (LoadingReceipts)
-{
-    <div class="mb-2">
-        <LoaderNotification OnReceivedNotification="Refresh" />
-    </div>
-}
-
 <hr />
 @if (receipts == null)
 {
@@ -76,10 +70,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        state.OnLoadReceiptEnded = async _=> await Refresh();
+        
         ClearMessage();
         ClearErrorMessage();
 
-        await Refresh();
+        await Refresh();        
     }
 
     public async Task Refresh()

@@ -1,3 +1,4 @@
+@using ReceiptApp.Components
 @inherits LayoutComponentBase
 
 <div class="page">
@@ -15,8 +16,12 @@
             </span>
         </div>
 
-        <div class="content px-4">
-            @Body
+        <div class="px-4">
+            <LoaderNotification />
         </div>
+
+        <main class="content px-4">
+            @Body
+        </main>
     </div>
 </div>
