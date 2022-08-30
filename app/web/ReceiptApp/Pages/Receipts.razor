@@ -64,9 +64,6 @@ else
     public string errorMessage { get; set; } = "";
     private IEnumerable<ReceiptListItem> all_receipts = new List<ReceiptListItem>();
     private IEnumerable<ReceiptListItem> receipts = new List<ReceiptListItem>();
-    private bool LoadingReceipts = false;
-
-    private Timer? _timer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -123,7 +120,7 @@ else
     {
         ClearErrorMessage();
         SetProcessing();
-        LoadingReceipts = true;
+        
         try
         {
             await Uploader.Upload(e.File);
@@ -156,6 +153,6 @@ else
 
     void IDisposable.Dispose()
     {
-        _timer?.Dispose();
+     
     }
 }

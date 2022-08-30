@@ -7,10 +7,10 @@
 
 <Button Color="Color.Primary" Clicked="@(async () => await HandleRedraw())">Refresh</Button>
 
-<LineChart @ref="lineChart" TItem="ReceiptTotal" Options="@lineChartOptions" />
+<LineChart @ref="lineChart" Options="lineChartOptions" TItem="ReceiptTotal" />
 
 @code {
-    LineChart<ReceiptTotal> lineChart;
+    LineChart<ReceiptTotal> lineChart = new LineChart<ReceiptTotal>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,7 +72,7 @@ ChartColor.FromRgba( 255, 159, 64, 0.2f )
     List<string> borderColors = new List<string> {
 ChartColor.FromRgba(253, 126, 20, 1f),
 ChartColor.FromRgba( 54, 162, 235, 1f ),
-ChartColor.FromRgba( 255, 206, 86, 1f ), 
+ChartColor.FromRgba( 255, 206, 86, 1f ),
 ChartColor.FromRgba( 75, 192, 192, 1f ),
 ChartColor.FromRgba( 255, 159, 64, 1f )
 };
@@ -82,10 +82,10 @@ ChartColor.FromRgba( 255, 159, 64, 1f )
         CultureInfo provider = CultureInfo.InvariantCulture;
 
         var all_receipts = (await Query.GetAll())
-
+        .Where(i => !string.IsNullOrEmpty(i.Day))
         .GroupBy(g => DateTime.ParseExact(g.Day, "MM/dd/yyyy", provider).Date)
         .Select(g => new ReceiptTotal(g.Key, g.Sum(x =>
-         x.Total))).OrderBy(x=>x.day);
+        x.Total))).OrderBy(x => x.day);
 
         AllReceipts = all_receipts.ToList();
     }

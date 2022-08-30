@@ -31,6 +31,10 @@
     private string GetName(System.Security.Claims.ClaimsPrincipal claims)
     {
         var usernameClaim = claims.Claims.FirstOrDefault(c => c.Type == "username");
+        if (usernameClaim is null)
+        {
+            return "";
+        }
         return usernameClaim.Value;
     }
 }

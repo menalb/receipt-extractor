@@ -31,7 +31,7 @@
 </table>
 @code {
     [Parameter]
-    public IEnumerable<ReceiptListItem> Receipts { get; set; }
+    public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
 
     private string BuildTagsSummary(IEnumerable<string> tags)
     {

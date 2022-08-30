@@ -7,7 +7,7 @@
 
 @if (webSocket.State == WebSocketState.Open && ShowLog)
 {
-    <NavLink title="Go to receipt" class="nav-link" href=@($"receipt/{receiptId}")>
+    <NavLink title="Go to receipt" class="nav-link" href=@($"receipt/{ReceiptId}")>
         Loaded receipt, click here to edit.
     </NavLink>
 
@@ -20,14 +20,13 @@
 
     CancellationTokenSource disposalTokenSource = new CancellationTokenSource();
     ClientWebSocket webSocket = new ClientWebSocket();
-    string username = "";
     private bool ShowLog { get; set; } = false;
 
-    string receiptId = "";
+    string ReceiptId = "";
 
     string wssUri { get => websocketConfig.Uri; }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         state.OnLoadReceiptStarted = async s =>
         {
@@ -58,19 +57,27 @@
             // check the received.EndOfMessage and consider buffering the blocks until that property is true.
             // Or use a higher-level library such as SignalR.
             var received = await webSocket.ReceiveAsync(buffer, disposalTokenSource.Token);
-            var receivedAsText = Encoding.UTF8.GetString(buffer.Array, 0, received.Count);
+            var receivedAsText = Encoding.UTF8.GetString(buffer.Array ?? new byte[] { }, 0, received.Count);
 
             var message = System.Text.Json.JsonSerializer.Deserialize<NotificationMessage>(receivedAsText);
             ShowLog = true;
-            receiptId = message.receiptId;
-            StateHasChanged();
-            Console.WriteLine($"Received: {message.receiptId}\n");
-            // await OnReceivedNotification.InvokeAsync(message.receiptId);
-            state.OnLoadReceiptEnded.Invoke(message.receiptId);
-            await Task.Delay(5000);
-            ShowLog = false;
-            StateHasChanged();
+            if (message is not null && !string.IsNullOrEmpty(message.receiptId))
+            {
+                await NotifyUI(message.receiptId);
+            }
         }
+    }
+
+    private async Task NotifyUI(string receiptId)
+    {
+        ReceiptId = receiptId;
+        StateHasChanged();
+        Console.WriteLine($"Received: {receiptId}\n");
+        // await OnReceivedNotification.InvokeAsync(message.receiptId);
+        state.OnLoadReceiptEnded?.Invoke(receiptId);
+        await Task.Delay(5000);
+        ShowLog = false;
+        StateHasChanged();
     }
 
     async Task Disconnect()

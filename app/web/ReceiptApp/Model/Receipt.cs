@@ -11,7 +11,7 @@ namespace ReceiptApp.Model
     {
 
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string Id { get; set; } = "";
         [JsonPropertyName("job_id")]
         public string? JobId { get; set; }
         [JsonPropertyName("day")]

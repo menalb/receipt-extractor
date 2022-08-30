@@ -57,7 +57,7 @@ else
             <div class="form-row">
                 <label for="Total" class="col-sm-2 col-form-label">Total:</label>
                 <div class="col-sm-10">
-                    <InputNumber id="Total" @bind-Value="receiptDetails.Total" @bind-Value:format="F2" @onblur="UpdateTotal"
+                    <InputNumber id="Total" @bind-Value="Total" @bind-Value:format="F2" @onblur="UpdateTotal"
                     class="form-control" />
                 </div>
             </div>
@@ -158,12 +158,24 @@ else
 @code {
 
     [Parameter]
-    public string ReceiptId { get; set; }
-    private ReceiptDetails receiptDetails;
-    private DateTime? Day { get; set; }
+    public string ReceiptId { get; set; } = "";
+    private ReceiptDetails? receiptDetails;
+    private DateTime Day { get; set; } = DateTime.Now;
     private string[] defaultTags = new string[] { "shop", "bar", "pharmacy" };
 
-    private string Tags { get; set; }
+    private string Tags { get; set; } = "";
+    private decimal Total
+    {
+        get => receiptDetails is not null && receiptDetails.Total.HasValue ? receiptDetails.Total.Value : 0M;
+        set
+        {
+            if (receiptDetails is not null)
+            {
+                receiptDetails.Total = value;
+            }
+        }
+    }
+
     private bool isLoading = false;
     private EditContext editContext;
     private bool isUpdating = false;
@@ -189,27 +201,40 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrEmpty(ReceiptId)) return;
+
         isLoading = true;
         receiptDetails = await Query.GetReceipt(ReceiptId);
-        CultureInfo provider = CultureInfo.InvariantCulture;
-        Day = DateTime.ParseExact(receiptDetails.Day, DateFormat, provider);
-        Tags = receiptDetails.Tags != null ? string.Join(";", receiptDetails.Tags).ToLowerInvariant() : string.Empty;
-        editContext = new(receiptDetails);
-        ReceiptItems = receiptDetails.Items.Select((item, index) => new ReceiptItem(index, item));
-        UpdateTotal();
 
+        if (receiptDetails is not null)
+        {
+            CultureInfo provider = CultureInfo.InvariantCulture;
+            if (!string.IsNullOrEmpty(receiptDetails.Day))
+            {
+                Day = DateTime.ParseExact(receiptDetails.Day, DateFormat, provider);
+            }
+            Tags = receiptDetails.Tags != null ? string.Join(";", receiptDetails.Tags).ToLowerInvariant() : string.Empty;
+            editContext = new(receiptDetails);
+            ReceiptItems = receiptDetails.Items is not null ?
+            receiptDetails.Items.Select((item, index) => new ReceiptItem(index, item)) :
+            new List<ReceiptItem>();
+
+            UpdateTotal();
+        }
         isLoading = false;
     }
 
     private void UpdateTotal()
     {
-        RealTotal = receiptDetails.Items.Sum(item => item.Price);
+        RealTotal = ReceiptItems.Sum(ri => ri.Item.Price);
     }
 
     private async Task Delete()
     {
-        await Command.Delete(receiptDetails.Id);
-        NavManager.NavigateTo("/receipts");
+        if (receiptDetails is not null)
+        {
+            await Command.Delete(receiptDetails.Id);
+            NavManager.NavigateTo("/receipts");
+        }
     }
 
     private void Remove(int receiptItemIndex)
@@ -220,7 +245,10 @@ else
 
     private async Task HandleExport()
     {
-        await ExportService.ToExcel(receiptDetails);
+        if (receiptDetails is not null)
+        {
+            await ExportService.ToExcel(receiptDetails);
+        }
     }
 
     private void AppendEmpty()
@@ -231,10 +259,10 @@ else
 
     private async Task HandleSubmit()
     {
-        if (editContext.Validate())
+        if (receiptDetails is not null && editContext.Validate())
         {
             isUpdating = true;
-            receiptDetails.Day = Day.Value.ToString(DateFormat);
+            receiptDetails.Day = Day.ToString(DateFormat);
             receiptDetails.Items = ReceiptItems.Select(receiptItem => receiptItem.Item);
             receiptDetails.Tags = string.IsNullOrEmpty(Tags) ? new List<string>() : Tags.Split(";");
             await Command.Save(ReceiptId, receiptDetails);
