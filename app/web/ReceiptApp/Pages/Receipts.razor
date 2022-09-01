@@ -10,7 +10,7 @@
 @inject TokenService TokenService
 @inject ReceiptQuery Query
 @inject UploaderService Uploader
-@inject ReceiptLoaderState state
+@inject ReceiptLoaderStateService state
 @implements IDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -67,13 +67,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        state.OnLoadReceiptEnded = async _=> await Refresh();
-        
+        state.OnLoadedReceiptChanged += async (component, receiptId) =>  await Refresh();
+
         ClearMessage();
         ClearErrorMessage();
 
-        await Refresh();        
-    }
+        await Refresh();
+    }    
 
     public async Task Refresh()
     {
@@ -120,10 +120,11 @@ else
     {
         ClearErrorMessage();
         SetProcessing();
-        
+
         try
         {
-            await Uploader.Upload(e.File);
+            string uploadedFileName = await Uploader.Upload(e.File);
+            state.NotifyLoadingReceiptChanged(this,uploadedFileName);
 
             await Task.Delay(3000);
 
@@ -134,6 +135,10 @@ else
             Console.WriteLine(ex.Message);
             errorMessage = ex.Message;
         }
+    }
+
+    private void LoadingTest(){
+        state.NotifyLoadingReceiptChanged(this, "foo file name");
     }
 
     private void SetProcessing()
@@ -153,6 +158,6 @@ else
 
     void IDisposable.Dispose()
     {
-     
+        state.OnLoadedReceiptChanged -= async (component, receiptId) => await Refresh();
     }
 }

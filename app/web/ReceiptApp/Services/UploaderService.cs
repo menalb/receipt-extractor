@@ -8,16 +8,16 @@ namespace ReceiptApp.Services
         private readonly TokenService _tokenService;
         private readonly HttpClient _httpClient;
 
-        private readonly ReceiptLoaderState _state;
+        private readonly ReceiptLoaderStateService _state;
 
-        public UploaderService(TokenService tokenService, HttpClient httpClient, ReceiptLoaderState state)
+        public UploaderService(TokenService tokenService, HttpClient httpClient, ReceiptLoaderStateService state)
         {
             _tokenService = tokenService;
             _httpClient = httpClient;
             _state = state;
         }
 
-        public async Task Upload(IBrowserFile file)
+        public async Task<string> Upload(IBrowserFile file)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "upload-receipt");
             request.Headers.Authorization = await _tokenService.BuildAuthHeader();
@@ -48,10 +48,11 @@ namespace ReceiptApp.Services
 
                 var newUploadResults = await putResponse.Content.ReadAsStringAsync();
 
-                _state.SetLoading(newUploadResults);
-
                 Console.WriteLine(newUploadResults);
+
+                return newUploadResults;
             }
+            throw new Exception("Unable do upload the file");
         }
     }
     class ApiResponse

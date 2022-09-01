@@ -31,7 +31,7 @@ namespace ReceiptApp
             builder.Services.AddTransient<JobsQuery>();
             builder.Services.AddTransient<UploaderService>();
 
-            builder.Services.AddScoped<ReceiptLoaderState>();
+            builder.Services.AddScoped<ReceiptLoaderStateService>();
 
             builder.Services.AddOidcAuthentication(options =>
             {
