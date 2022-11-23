@@ -20,7 +20,9 @@ Parameters:
   UpdateReceiptLambdaArn:
     Type: String
     Description: Update Receipt Lambda ARN
-
+  UploadReceiptLambdaArn:
+    Type: String
+    Description: Get Upload PresignedUrl Receipt Lambda ARN
 
 Globals:
   Api:
@@ -49,10 +51,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'lambda:InvokeFunction'
-                Resource: !Ref UpdateReceiptLambdaArn
+                Resource: 
+                    - !Ref UpdateReceiptLambdaArn
+                    - !Ref UploadReceiptLambdaArn
               - Effect: Allow
                 Action:
                   - 'dynamodb:Query'
+                  - "dynamodb:DeleteItem"
                 # Including * in the resource Arn allows access to the DynamoDB table and indexes
                 Resource: 
                   - !Sub
@@ -78,6 +83,7 @@ Resources:
     Properties:
       Name: !Sub '${AppName}'
       ApiKeySourceType: HEADER
+
   ReceiptsResource:
     Type: 'AWS::ApiGateway::Resource'
     Properties:
@@ -99,6 +105,62 @@ Resources:
       ParentId: !Ref ReceiptResource
       PathPart: '{receiptid}'
 
+  GetSignedUrlUploadReceiptResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: "upload-receipt"
+  GetSignedUrlUploadReceiptMethodOptions:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref GetSignedUrlUploadReceiptResource
+      HttpMethod: OPTIONS
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: Empty
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+
+  GetSignedUrlUploadReceiptMethodGet:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref GetSignedUrlUploadReceiptResource
+      HttpMethod: GET
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !Ref UploadReceiptLambdaArn
+            
   ReceiptsMethodOptions:
     Type: 'AWS::ApiGateway::Method'
     Properties:
@@ -216,7 +278,7 @@ Resources:
           # Using single-line, stringified JSON as the mapping template
           # Use $util.urlDecode($input.params('pathname')) to decode if the url path value contains spaces
           # A + or %20 may be used as a space in the url
-          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:v1\",\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"}}}"
+          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:v1\",\"FilterExpression\":\"contains(#y,:y)\",\"ExpressionAttributeNames\":\"{\"#y\":\"day\"}\",\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"},\":y\":{\"S\":2022}}}"
         IntegrationResponses:
           - StatusCode: '200'
             ResponseParameters:
@@ -295,6 +357,41 @@ Resources:
         Uri: !Sub 
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
           - lambdaArn: !Ref UpdateReceiptLambdaArn
+  SingleReceiptMethodDelete:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref SingleReceiptResource
+      HttpMethod: DELETE
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:dynamodb:action/DeleteItem"
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        RequestParameters:
+          integration.request.path.receiptid: method.request.path.receiptid
+        RequestTemplates:
+          application/json: '{ "TableName":"receipts-items", "Key":{"user_id":{"S":"$util.urlDecode($context.authorizer.claims.sub)"}, "receipt_id":{"S":"$util.urlDecode($input.params(''receiptid''))"}} }'
+        IntegrationResponses:
+          - StatusCode: "200"
+            ResponseTemplates:
+              application/json: "{}"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
 
   JobsMethodGet:
     Type: 'AWS::ApiGateway::Method'
@@ -347,6 +444,14 @@ Resources:
       # note: if route *not* at API Gateway root, `SourceArn` would take the form of:
       #               arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/${apiGatewayStageName}/${apiGatewayHTTPMethod}/PATH_PART
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/PUT/receipts/receipt/*   
+
+  GetSignedUrlUploadReceiptLambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UploadReceiptLambdaArn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/GET/upload-receipt/*
 
   ApiDeployment:
     Type: 'AWS::ApiGateway::Deployment'
