@@ -11,9 +11,13 @@ namespace ReceiptApp.Services
             _api = api;
         }
 
-        public async Task<IEnumerable<ReceiptSummary>> GetAll()
+        public async Task<IEnumerable<ReceiptSummary>> GetAll(DateTime? from = null)
         {
-            var receipts = await _api.Get<ReceiptsResult>(receipts_url);
+            var dayFrom = from ?? DateTime.Now
+                .AddDays(-30);
+            var fromParam = dayFrom.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            var receipts = await _api.Get<ReceiptsResult>(receipts_url + $"?from={fromParam}");
 
             return receipts?.Receipts ?? new List<ReceiptSummary>();
         }

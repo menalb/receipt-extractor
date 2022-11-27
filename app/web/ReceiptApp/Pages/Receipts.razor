@@ -65,6 +65,8 @@ else
     private IEnumerable<ReceiptListItem> all_receipts = new List<ReceiptListItem>();
     private IEnumerable<ReceiptListItem> receipts = new List<ReceiptListItem>();
 
+    private DateTime? MonthYear = null;
+
     protected override async Task OnInitializedAsync()
     {
         state.OnLoadedReceiptChanged += async (component, receiptId) =>  await Refresh();
@@ -79,11 +81,11 @@ else
     {
         CultureInfo provider = CultureInfo.InvariantCulture;
 
-        all_receipts = (await Query.GetAll())
+        all_receipts = (await Query.GetAll(MonthYear))
         .Select(r => new ReceiptListItem(
         r.Id ?? "",
         r.JobId ?? "",
-        DateTime.ParseExact(r.Day ?? "", "MM/dd/yyyy", provider),
+        DateTime.ParseExact(r.Day ?? "", "yyyy-MM-dd", provider),
         r.Tags ?? new string[] { }, r.Shop ?? "",
         r.Total)
         ).OrderByDescending(r => r.day);
@@ -95,9 +97,9 @@ else
 
         receipts = all_receipts.Select(r => r);
 
-        FilterByMonth(MonthFilter);
+        StateHasChanged();
     }
-    private void FilterByMonth(string month)
+    private async void FilterByMonth(string month)
     {
         loadingMessage = string.Empty;
         Console.WriteLine(month);
@@ -106,7 +108,8 @@ else
             MonthFilter = month;
             if (DateTime.TryParse(month, out DateTime monthYear))
             {
-                receipts = all_receipts.Where(r => r.day.Month == monthYear.Month && r.day.Year == monthYear.Year);
+                MonthYear = monthYear;
+                await Refresh();                
             }
         }
         else

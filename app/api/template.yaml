@@ -278,7 +278,7 @@ Resources:
           # Using single-line, stringified JSON as the mapping template
           # Use $util.urlDecode($input.params('pathname')) to decode if the url path value contains spaces
           # A + or %20 may be used as a space in the url
-          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:v1\",\"FilterExpression\":\"contains(#y,:y)\",\"ExpressionAttributeNames\":\"{\"#y\":\"day\"}\",\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"},\":y\":{\"S\":2022}}}"
+          application/json: "{\"TableName\":\"receipts-items\",\"KeyConditionExpression\":\"user_id=:v1\",\"FilterExpression\":\"#y >= :y\",\"ExpressionAttributeNames\":{\"#y\":\"day\"},\"ExpressionAttributeValues\":{\":v1\":{\"S\":\"$util.urlDecode($context.authorizer.claims.sub)\"},\":y\":{\"S\":\"$util.urlDecode($input.params('from'))\"}}}"
         IntegrationResponses:
           - StatusCode: '200'
             ResponseParameters:

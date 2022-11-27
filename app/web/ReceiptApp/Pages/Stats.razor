@@ -83,7 +83,7 @@ ChartColor.FromRgba( 255, 159, 64, 1f )
 
         var all_receipts = (await Query.GetAll())
         .Where(i => !string.IsNullOrEmpty(i.Day))
-        .GroupBy(g => DateTime.ParseExact(g.Day, "MM/dd/yyyy", provider).Date)
+        .GroupBy(g => DateTime.ParseExact(g.Day, "yyyy-MM-dd", provider).Date)
         .Select(g => new ReceiptTotal(g.Key, g.Sum(x =>
         x.Total))).OrderBy(x => x.day);
 
