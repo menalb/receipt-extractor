@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ReceiptItemsTableName:
+    Description: Name of the table that contains the receipt items
+    Type: String
+    Default: receipts-items
+
+# Globals:
+#   Function:
+#     Timeout: 10
+#   Api:
+#     Cors:
+#       AllowMethods: "'*'"
+#       AllowHeaders: "'*'"
+#       AllowOrigin: "'*'"
+#       AllowCredentials: true
+
+Resources:
+  
+  ReceiptUpdateApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+      
+  ReceiptUpdateApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ""
+      Handler: "ReceiptCommands::ReceiptCommands.Functions::Put"
+      Runtime: dotnet6
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          RECEIPT_ITEMS_TABLE_NAME: !Ref ReceiptItemsTableName
+      Policies:        
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptItemsTableName
+      
+      Events:
+        UpdateReceipt:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:            
+            Path: /receipts/{userid}/receipt/{receiptid}/
+            Method: put
+            RestApiId: !Ref ReceiptUpdateApi
+
+Outputs:
+  ReceiptCommandApi:
+    Description: "API Gateway endpoint URL for Prod stage for function"
+    Value: !Sub "https://${ReceiptUpdateApiFunction}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
