@@ -51,6 +51,26 @@ Resources:
             Method: put
             RestApiId: !Ref ReceiptUpdateApi
 
+  ReceiptRegisterApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ""
+      Handler: "ReceiptCommands::ReceiptCommands.Functions::Post"
+      Runtime: dotnet6
+      MemorySize: 256
+      Timeout: 30
+      Policies:        
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptItemsTableName
+      
+      Events:
+        RegisterReceipt:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:            
+            Path: /receipts/{userid}/
+            Method: post
+            RestApiId: !Ref ReceiptUpdateApi
+
 Outputs:
   ReceiptCommandApi:
     Description: "API Gateway endpoint URL for Prod stage for function"

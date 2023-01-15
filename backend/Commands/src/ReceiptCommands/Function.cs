@@ -16,6 +16,7 @@ namespace ReceiptCommands;
 public class Functions
 {
     private readonly ICommandHandler<UpdateReceiptCommand> _updateCommadHandler;
+    private readonly ICommandHandler<RegisterReceiptCommand> _registerCommadHandler;
 
     /// <summary>
     /// Default constructor that Lambda will invoke.
@@ -23,11 +24,16 @@ public class Functions
     public Functions()
     {
         _updateCommadHandler = new UpdateReceiptCommandHandler(new AmazonDynamoDBClient());
+        _registerCommadHandler = new RegisterReceiptCommandHandler(new AmazonDynamoDBClient());
     }
 
-    public Functions(ICommandHandler<UpdateReceiptCommand> updateCommadHandler)
+    public Functions(
+        ICommandHandler<UpdateReceiptCommand> updateCommadHandler,
+        ICommandHandler<RegisterReceiptCommand> registerCommadHandler
+        )
     {
         _updateCommadHandler = updateCommadHandler;
+        _registerCommadHandler = registerCommadHandler;
     }
 
     /// <summary>
@@ -44,7 +50,7 @@ public class Functions
             return MethodNotAllowed;
         }
 
-        (bool isValid, ParsedRequest parsed) = ParseRequest(request);
+        (bool isValid, ParsedPutRequest parsed) = ParsePutRequest(request);
 
         if (!isValid)
         {
@@ -56,13 +62,39 @@ public class Functions
         return OK;
     }
 
+    /// <summary>
+    /// A Lambda function to respond to HTTP Get methods from API Gateway
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns>The API Gateway response.</returns>
+    public async Task<APIGatewayProxyResponse> Post(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        context.Logger.LogLine($"{nameof(Post)} Request\n");
+
+        if (!IsAuthorized(request))
+        {
+            return MethodNotAllowed;
+        }
+
+        (bool isValid, ParsedPostRequest parsed) = ParsePostRequest(request);
+
+        if (!isValid)
+        {
+            return BadRequest;
+        }
+
+        await _registerCommadHandler.Handle(parsed.userId, parsed.command);
+
+        return OK;
+    }
+
     private static bool IsAuthorized(APIGatewayProxyRequest request) =>
         request is not null &&
         request.RequestContext is not null &&
         request.RequestContext.Authorizer is not null &&
         !string.IsNullOrEmpty(request.RequestContext.Authorizer.Claims["sub"]);
 
-    private static (bool isValid, ParsedRequest parsed) ParseRequest(APIGatewayProxyRequest request)
+    private static (bool isValid, ParsedPutRequest parsed) ParsePutRequest(APIGatewayProxyRequest request)
     {
 
         if (request.PathParameters is null || string.IsNullOrEmpty(request.Body))
@@ -76,25 +108,31 @@ public class Functions
         var receipt = System.Text.Json.JsonSerializer.Deserialize<ReceiptDetails>(request.Body);
         var isValid = !(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(receiptId) || receipt is null);
         return (
-            isValid, 
-            isValid 
-            ? new ParsedRequest(userId, new UpdateReceiptCommand(receiptId, receipt)) 
+            isValid,
+            isValid
+            ? new ParsedPutRequest(userId, new UpdateReceiptCommand(receiptId, receipt))
             : null);
     }
 
-    private static bool IsPutRequestValid(APIGatewayProxyRequest request)
+    private static (bool isValid, ParsedPostRequest parsed) ParsePostRequest(APIGatewayProxyRequest request)
     {
-        if (request.PathParameters is null)
+        if (string.IsNullOrEmpty(request.Body))
         {
-            return false;
+            return (false, null);
         }
-        var userId = request.RequestContext.Authorizer.Claims["sub"];
-        var receiptId = request.PathParameters["receiptid"];
 
-        return !(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(receiptId));
+        var userId = request.RequestContext.Authorizer.Claims["sub"];
+
+        var receipt = System.Text.Json.JsonSerializer.Deserialize<ReceiptDetails>(request.Body);
+
+        return (
+            receipt is not null,
+            true ? new ParsedPostRequest(userId, new RegisterReceiptCommand(receipt))
+            : null);
     }
 
-    record ParsedRequest(string userId, UpdateReceiptCommand command);
+    record ParsedPostRequest(string userId, RegisterReceiptCommand command);
+    record ParsedPutRequest(string userId, UpdateReceiptCommand command);
     public APIGatewayProxyResponse OK = BuildResponse(HttpStatusCode.OK);
     public APIGatewayProxyResponse MethodNotAllowed = BuildResponse(HttpStatusCode.MethodNotAllowed);
     public APIGatewayProxyResponse BadRequest = BuildResponse(HttpStatusCode.BadRequest);

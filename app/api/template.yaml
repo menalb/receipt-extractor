@@ -17,6 +17,9 @@ Parameters:
   AuthorizerARN:
     Type: String
     Description: Cognito ARN
+  RegisterReceiptLambdaArn:
+    Type: String
+    Description: Register Receipt Lambda ARN
   UpdateReceiptLambdaArn:
     Type: String
     Description: Update Receipt Lambda ARN
@@ -52,8 +55,9 @@ Resources:
                 Action:
                   - 'lambda:InvokeFunction'
                 Resource: 
+                    - !Ref RegisterReceiptLambdaArn
                     - !Ref UpdateReceiptLambdaArn
-                    - !Ref UploadReceiptLambdaArn
+                    - !Ref UploadReceiptLambdaArn                    
               - Effect: Allow
                 Action:
                   - 'dynamodb:Query'
@@ -296,6 +300,27 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
           StatusCode: 200
   
+  ReceiptsMethodPost:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref ReceiptsResource
+      HttpMethod: POST
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
+          - lambdaArn: !Ref RegisterReceiptLambdaArn
+
   SingleReceiptMethodGet:
     Type: 'AWS::ApiGateway::Method'
     Properties:
@@ -444,6 +469,16 @@ Resources:
       # note: if route *not* at API Gateway root, `SourceArn` would take the form of:
       #               arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/${apiGatewayStageName}/${apiGatewayHTTPMethod}/PATH_PART
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/PUT/receipts/receipt/*   
+  
+  RegisterReceiptLambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RegisterReceiptLambdaArn
+      Principal: apigateway.amazonaws.com
+      # note: if route *not* at API Gateway root, `SourceArn` would take the form of:
+      #               arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/${apiGatewayStageName}/${apiGatewayHTTPMethod}/PATH_PART
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/POST/receipts/*
 
   GetSignedUrlUploadReceiptLambdaApiGatewayInvoke:
     Type: AWS::Lambda::Permission
@@ -457,6 +492,7 @@ Resources:
     Type: 'AWS::ApiGateway::Deployment'
     DependsOn:
       - ReceiptsMethodGet
+      - ReceiptsMethodPost
     Properties:
       RestApiId: !Ref Api
       StageName: !Sub '${StageName}'
