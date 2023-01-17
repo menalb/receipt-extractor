@@ -1,0 +1,77 @@
+﻿@using Blazorise.Charts
+@using Model;
+@using System.Globalization;
+
+<div>
+    <BarChart @ref="lineChart" TItem="ReceiptTotal" Options="lineChartOptions" />
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
+    BarChart<ReceiptTotal> lineChart = new BarChart<ReceiptTotal>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (lineChart.Data != null)
+        {
+            await lineChart.Update();
+        }
+        else
+        {
+            await lineChart.AddDatasetsAndUpdate(GetLineChartDataset());
+        }
+    }
+
+    async Task HandleRedraw()
+    {
+        Map();
+        await lineChart.Clear();
+
+        await lineChart.AddDataSet(GetLineChartDataset());
+
+    }
+
+    BarChartOptions lineChartOptions = new()
+        {
+            Parsing = new ChartParsing
+            {
+                XAxisKey = "day",
+                YAxisKey = "total",
+            },
+            MaintainAspectRatio = true,
+            Responsive = true,
+            Plugins = new ChartPlugins { Legend = new ChartLegend { Display = false } }
+        };
+
+
+    public List<ReceiptTotal> Map()
+    {
+        //CultureInfo provider = CultureInfo.InvariantCulture;
+
+        var all_receipts = Receipts
+        .GroupBy(g => g.day.Date)
+        .Select(g => new
+        {
+            d = g.Key,
+            t = g.Sum(x => x.total)
+        }).OrderBy(x => x.d).Select(t => new ReceiptTotal(t.d.ToString("MMM dd"), t.t));
+
+        return all_receipts.ToList();
+
+    }
+
+    BarChartDataset<ReceiptTotal> GetLineChartDataset()
+    {
+        return new BarChartDataset<ReceiptTotal>
+            {
+                Data = Map(),
+                BackgroundColor = backgroundColors,
+                BorderColor = borderColors
+            };
+    }
+
+    List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 0.2f) };
+    List<string> borderColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 1f) };
+    public record ReceiptTotal(string day, decimal total);
+}
