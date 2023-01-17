@@ -17,6 +17,9 @@
 <h1 class="receipts-header">
     Receipts
     <span class="header-actions">
+        <NavLink title="Add Receipt" class="btn btn-primary" href=@($"register-receipt")>
+            <i class="fas fa-plus"></i>
+        </NavLink>
         <button type="button" class="btn btn-primary" title="Refresh Receipts list" @onclick="@(e=>Refresh())">
             <i class="fas fa-sync-alt"></i>
         </button>
@@ -41,8 +44,8 @@
 
 <div class="mb-2">
     <input id="monthFilter" alt="Filter by month" type="month"
-        @oninput="@(e=>FilterByMonth(e.Value?.ToString() ?? string.Empty))" class="form-control col-xs-8 col-sm-4"
-        placeholder="Select month" />
+           @oninput="@(e=>FilterByMonth(e.Value?.ToString() ?? string.Empty))" class="form-control col-xs-8 col-sm-4"
+           placeholder="Select month" />
 </div>
 
 <hr />
@@ -69,13 +72,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        state.OnLoadedReceiptChanged += async (component, receiptId) =>  await Refresh();
+        state.OnLoadedReceiptChanged += async (component, receiptId) => await Refresh();
 
         ClearMessage();
         ClearErrorMessage();
 
         await Refresh();
-    }    
+    }
 
     public async Task Refresh()
     {
@@ -109,7 +112,7 @@ else
             if (DateTime.TryParse(month, out DateTime monthYear))
             {
                 MonthYear = monthYear;
-                await Refresh();                
+                await Refresh();
             }
         }
         else
@@ -127,7 +130,7 @@ else
         try
         {
             string uploadedFileName = await Uploader.Upload(e.File);
-            state.NotifyLoadingReceiptChanged(this,uploadedFileName);
+            state.NotifyLoadingReceiptChanged(this, uploadedFileName);
 
             await Task.Delay(3000);
 
@@ -140,7 +143,8 @@ else
         }
     }
 
-    private void LoadingTest(){
+    private void LoadingTest()
+    {
         state.NotifyLoadingReceiptChanged(this, "foo file name");
     }
 
