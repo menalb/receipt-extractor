@@ -1,10 +1,9 @@
-﻿@page "/receipt/{ReceiptId}"
+﻿@page "/register-receipt"
 @using ReceiptApp.Services
 @using ReceiptApp.Model
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Linq
-@inject ReceiptQuery Query
 @inject ReceiptCommand Command
 @inject ReceiptExport ExportService
 @inject IJSRuntime JS
@@ -147,22 +146,16 @@ else
                     </button>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <button type="button" class="btn btn-primary" @onclick="@(e=>Delete())" title="Delete">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>
         </section>
     </EditForm>
 }
 
 @code {
-
-    [Parameter]
-    public string ReceiptId { get; set; } = "";
-    private ReceiptDetails? receiptDetails;
+    private ReceiptDetails? receiptDetails = new ReceiptDetails
+        {
+            Shop = new Shop(),
+            Items = new List<Model.ReceiptItem>()
+        };
     private DateTime Day { get; set; } = DateTime.Now;
     private string[] defaultTags = new string[] { "shop", "bar", "pharmacy" };
 
@@ -203,41 +196,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(ReceiptId)) return;
-
-        isLoading = true;
-        receiptDetails = await Query.GetReceipt(ReceiptId);
-
-        if (receiptDetails is not null)
-        {
-            CultureInfo provider = CultureInfo.InvariantCulture;
-            if (!string.IsNullOrEmpty(receiptDetails.Day))
-            {
-                Day = DateTime.ParseExact(receiptDetails.Day, DateFormat, provider);
-            }
-            Tags = receiptDetails.Tags != null ? string.Join(";", receiptDetails.Tags).ToLowerInvariant() : string.Empty;
-            editContext = new(receiptDetails);
-            ReceiptItems = receiptDetails.Items is not null ?
-            receiptDetails.Items.Select((item, index) => new ReceiptItem(index, item)) :
-            new List<ReceiptItem>();
-
-            UpdateTotal();
-        }
-        isLoading = false;
+        Day = DateTime.Now;
+        editContext = new(receiptDetails);
     }
 
     private void UpdateTotal()
     {
         RealTotal = ReceiptItems.Sum(ri => ri.Item.Price);
-    }
-
-    private async Task Delete()
-    {
-        if (receiptDetails is not null)
-        {
-            await Command.Delete(receiptDetails.Id);
-            NavManager.NavigateTo("/receipts");
-        }
     }
 
     private void Remove(int receiptItemIndex)
@@ -256,7 +221,11 @@ else
 
     private void AppendEmpty()
     {
-        var maxIndex = ReceiptItems.Max(item => item.Index);
+        var maxIndex = 0;
+        if (ReceiptItems.Any())
+        {
+            maxIndex = ReceiptItems.Max(item => item.Index);
+        }        
         ReceiptItems = ReceiptItems.Append(new ReceiptItem(maxIndex + 1, new Model.ReceiptItem()));
     }
 
@@ -268,7 +237,7 @@ else
             receiptDetails.Day = Day.ToString(DateFormat);
             receiptDetails.Items = ReceiptItems.Select(receiptItem => receiptItem.Item);
             receiptDetails.Tags = string.IsNullOrEmpty(Tags) ? new List<string>() : Tags.Split(";");
-            await Command.Save(ReceiptId, receiptDetails);
+            await Command.Register(receiptDetails);
             UpdateTotal();
             isUpdating = false;
         }
@@ -276,20 +245,6 @@ else
         {
 
         }
-    }
-
-    private async Task HandleRegister()
-    {
-        var newRceipt = new ReceiptDetails
-            {
-                Day = receiptDetails.Day,
-                Items = receiptDetails.Items,
-                Shop = receiptDetails.Shop,
-                Total = 1,
-                TotalVAT = 1
-            };
-
-        await Command.Register(newRceipt);
     }
 
     private string PriceAlterCss()

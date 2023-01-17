@@ -36,6 +36,22 @@ namespace ReceiptApp.Services
             throw new Exception("API not available");
         }
 
+        public async Task Post<TBody>(string url, TBody body)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+            request.Headers.Authorization = await _tokenService.BuildAuthHeader();
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception(response.ReasonPhrase);
+            }
+        }
+
         public async Task Put<TBody>(string url, TBody body)
         {
             var request = new HttpRequestMessage(HttpMethod.Put, url)
