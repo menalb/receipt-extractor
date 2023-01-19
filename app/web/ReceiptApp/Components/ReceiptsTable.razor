@@ -1,11 +1,12 @@
 @using Model
 @using Services
-<table class="table">
+@inject NavigationManager NavManager
+
+<table class="table d-none d-sm-block">
     <thead>
         <tr>
             <th scope="col"></th>
             <th scope="col">Date</th>
-            <th scope="col">Kind</th>
             <th scope="col">Shop</th>
             <th scope="col">Total</th>
         </tr>
@@ -20,15 +21,40 @@
                     </NavLink>
                 </td>
                 <td>@receipt.day.ToShortDateString()</td>
-                <td title="@BuildTagsSummary(receipt.tags)">
-                    <i class="@TagsService.GetKindIcon(receipt.tags)"></i>
+                <td title="@BuildShopTitle(receipt)">
+                    <i aria-hidden="true" class="@TagsService.GetKindIcon(receipt.tags)"></i>
+                    @receipt.shop
                 </td>
-                <td>@receipt.shop</td>
                 <td>@receipt.total</td>
             </tr>
         }
     </tbody>
 </table>
+
+
+<table class="table d-block d-sm-none">
+    <thead>
+        <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Shop</th>
+            <th scope="col">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var receipt in Receipts)
+        {
+            <tr @onclick="()=>NavigateToReceipt(receipt)">
+                <td>@receipt.day.ToShortDateString()</td>
+                <td title="@BuildShopTitle(receipt)">
+                    <i aria-hidden="true" class="@TagsService.GetKindIcon(receipt.tags)"></i>
+                    @receipt.shop
+                </td>
+                <td>@receipt.total</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
 @code {
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
@@ -38,5 +64,13 @@
         return tags != null ? string.Join(" ", tags) : string.Empty;
     }
 
+    private string BuildShopTitle(ReceiptListItem receipt)
+    {
+        return $"{BuildTagsSummary(receipt.tags)} {receipt.shop}";
+    }
 
+    private void NavigateToReceipt(ReceiptListItem receipt)
+    {
+        NavManager.NavigateTo($"receipt/{receipt.id}");
+    }
 }
