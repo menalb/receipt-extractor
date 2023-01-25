@@ -55,9 +55,18 @@
 }
 else
 {
-    <WeeklyStatus Receipts="receipts" />
+    <WeeklyStatus Receipts="receipts" SelectedDay="OnSelectedDay" />
 
-    @foreach (var month in receipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
+    @if (selectedDay.HasValue)
+    {
+        <div>
+            <span class="badge badge-pill badge-dark">
+                @selectedDay.Value.ToLongDateString()
+                <button class="badge badge-light" @onclick="ResetSelectedDay">x</button>
+            </span>
+        </div>
+    }
+    @foreach (var month in tableReceipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
     {
         <h3>
             @FormatMonthName(month.Key.month, month.Key.year)
@@ -75,6 +84,9 @@ else
     public string errorMessage { get; set; } = "";
     private IEnumerable<ReceiptListItem> all_receipts = new List<ReceiptListItem>();
     private IEnumerable<ReceiptListItem> receipts = new List<ReceiptListItem>();
+
+    private IEnumerable<ReceiptListItem> tableReceipts = new List<ReceiptListItem>();
+    private DateTime? selectedDay;
 
     private DateTime? MonthYear = null;
 
@@ -106,19 +118,24 @@ else
             all_receipts = all_receipts.Where(r => r.JobId == JobId);
         }
 
-        receipts = all_receipts.Select(r => r);
+        UpdatePageData();
 
         StateHasChanged();
+    }
+
+    private void UpdatePageData()
+    {
+        receipts = all_receipts.Select(r => r);
+        tableReceipts = receipts;
     }
 
     private string FormatMonthName(int month, int year)
     =>
     $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)} - {year}";
 
-    private async void FilterByMonth(string month)
+    private async Task FilterByMonth(string month)
     {
         loadingMessage = string.Empty;
-        Console.WriteLine(month);
         if (!string.IsNullOrWhiteSpace(month))
         {
             MonthFilter = month;
@@ -131,7 +148,8 @@ else
         else
         {
             MonthFilter = string.Empty;
-            receipts = all_receipts;
+
+            UpdatePageData();
         }
     }
 
@@ -156,6 +174,18 @@ else
         }
     }
 
+    private void OnSelectedDay(DateTime day)
+    {
+        tableReceipts = all_receipts.Where(r => r.day == day);
+        selectedDay = day;
+        StateHasChanged();
+    }
+
+    private void ResetSelectedDay()
+    {
+        selectedDay = null;
+        UpdatePageData();
+    }
 
     private void SetProcessing()
     {

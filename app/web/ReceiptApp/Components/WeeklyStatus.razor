@@ -2,16 +2,18 @@
 @using Model;
 @using System.Globalization;
 
-<div>
-    <BarChart @ref="lineChart"
-              TItem="ReceiptTotal"
-              Options="lineChartOptions"
-              Clicked="@OnClicked" />
-</div>
+<BarChart @ref="lineChart"
+          TItem="ReceiptTotal"
+          Options="lineChartOptions"
+          Width="Width.Max100"
+          Clicked="@OnClicked" />
 
 @code {
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
+    [Parameter]
+    public EventCallback<DateTime> SelectedDay { get; set; }
+
     BarChart<ReceiptTotal> lineChart = new BarChart<ReceiptTotal>();
 
     List<ReceiptTotal> Totals = new();
@@ -69,7 +71,7 @@
         .ToList();
     }
 
-    Task OnClicked(ChartMouseEventArgs e)
+    private async Task OnClicked(ChartMouseEventArgs e)
     {
         var model = e.Model as BarChartModel;
 
@@ -77,9 +79,11 @@
         {
             var selected = Totals.FirstOrDefault(t => t.dayLabel == model.DatasetLabel);
 
-            Console.WriteLine(selected?.day.ToLongDateString() ?? "");
+            if (selected is not null)
+            {
+                await SelectedDay.InvokeAsync(selected.day);
+            }
         }
-        return Task.CompletedTask;
     }
 
     private BarChartDataset<ReceiptTotal> GetLineChartDataset()
