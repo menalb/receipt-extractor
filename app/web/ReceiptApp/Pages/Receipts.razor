@@ -56,7 +56,14 @@
 else
 {
     <WeeklyStatus Receipts="receipts" />
-    <ReceiptsTable Receipts="receipts" />
+
+    @foreach (var month in receipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
+    {
+        <h3>
+            @FormatMonthName(month.Key.month, month.Key.year)
+        </h3>
+        <ReceiptsTable Receipts="month" ShowTableHeader="false" />
+    }
 }
 
 @code {
@@ -103,6 +110,11 @@ else
 
         StateHasChanged();
     }
+
+    private string FormatMonthName(int month, int year)
+    =>
+    $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)} - {year}";
+
     private async void FilterByMonth(string month)
     {
         loadingMessage = string.Empty;
@@ -144,10 +156,6 @@ else
         }
     }
 
-    private void LoadingTest()
-    {
-        state.NotifyLoadingReceiptChanged(this, "foo file name");
-    }
 
     private void SetProcessing()
     {

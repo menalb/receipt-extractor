@@ -33,13 +33,16 @@
 
 
 <table class="table d-block d-sm-none">
-    <thead>
-        <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Shop</th>
-            <th scope="col">Total</th>
-        </tr>
-    </thead>
+    @if(ShowTableHeader)
+    {
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Shop</th>
+                <th scope="col">Total</th>
+            </tr>
+        </thead>
+    }
     <tbody>
         @foreach (var receipt in Receipts)
         {
@@ -58,6 +61,8 @@
 @code {
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
+    [Parameter]
+    public bool ShowTableHeader { get; set; } = true;
 
     private string BuildTagsSummary(IEnumerable<string> tags)
     {

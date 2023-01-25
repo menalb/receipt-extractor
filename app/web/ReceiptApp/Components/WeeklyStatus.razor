@@ -3,7 +3,10 @@
 @using System.Globalization;
 
 <div>
-    <BarChart @ref="lineChart" TItem="ReceiptTotal" Options="lineChartOptions" />
+    <BarChart @ref="lineChart"
+              TItem="ReceiptTotal"
+              Options="lineChartOptions"
+              Clicked="@OnClicked" />
 </div>
 
 @code {
@@ -11,32 +14,39 @@
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
     BarChart<ReceiptTotal> lineChart = new BarChart<ReceiptTotal>();
 
+    List<ReceiptTotal> Totals = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
     protected override async Task OnParametersSetAsync()
     {
-        if (lineChart.Data != null)
-        {
-            await lineChart.Update();
-        }
-        else
-        {
-            await lineChart.AddDatasetsAndUpdate(GetLineChartDataset());
-        }
+        await HandleRedraw();
     }
 
     async Task HandleRedraw()
     {
-        Map();
-        await lineChart.Clear();
-
-        await lineChart.AddDataSet(GetLineChartDataset());
-
+        UpdateTotals();
+        if (lineChart.Data != null)
+        {
+            await lineChart.SetData(0, Totals);
+        }
+        else
+        {
+            await lineChart.AddDataSet(GetLineChartDataset());
+        }
     }
 
     BarChartOptions lineChartOptions = new()
         {
             Parsing = new ChartParsing
             {
-                XAxisKey = "day",
+                XAxisKey = "dayLabel",
                 YAxisKey = "total",
             },
             MaintainAspectRatio = true,
@@ -45,27 +55,38 @@
         };
 
 
-    public List<ReceiptTotal> Map()
+    public void UpdateTotals()
     {
-        //CultureInfo provider = CultureInfo.InvariantCulture;
-
-        var all_receipts = Receipts
+        Totals = Receipts
         .GroupBy(g => g.day.Date)
         .Select(g => new
         {
             d = g.Key,
             t = g.Sum(x => x.total)
-        }).OrderBy(x => x.d).Select(t => new ReceiptTotal(t.d.ToString("MMM dd"), t.t));
-
-        return all_receipts.ToList();
-
+        })
+        .OrderBy(x => x.d)
+        .Select(t => new ReceiptTotal(t.d.ToString("MMM dd"), t.t, t.d))
+        .ToList();
     }
 
-    BarChartDataset<ReceiptTotal> GetLineChartDataset()
+    Task OnClicked(ChartMouseEventArgs e)
+    {
+        var model = e.Model as BarChartModel;
+
+        if (model is not null)
+        {
+            var selected = Totals.FirstOrDefault(t => t.dayLabel == model.DatasetLabel);
+
+            Console.WriteLine(selected?.day.ToLongDateString() ?? "");
+        }
+        return Task.CompletedTask;
+    }
+
+    private BarChartDataset<ReceiptTotal> GetLineChartDataset()
     {
         return new BarChartDataset<ReceiptTotal>
             {
-                Data = Map(),
+                Data = Totals,
                 BackgroundColor = backgroundColors,
                 BorderColor = borderColors
             };
@@ -73,5 +94,5 @@
 
     List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 0.2f) };
     List<string> borderColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 1f) };
-    public record ReceiptTotal(string day, decimal total);
+    public record ReceiptTotal(string dayLabel, decimal total, DateTime day);
 }
