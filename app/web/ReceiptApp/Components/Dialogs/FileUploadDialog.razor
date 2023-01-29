@@ -1,0 +1,92 @@
+﻿@using ReceiptApp.Components;
+@using ReceiptApp.Services;
+@inject ReceiptLoaderStateService state
+@inject UploaderService Uploader
+
+<button class="btn btn-primary" @onclick="()=> OpenDialog()">
+    <i class="fas fa-upload"></i>
+</button>
+
+@if (DialogIsOpen)
+{
+    <Dialog Caption="Upload Receipt"
+        OnClose="@OnDialogClose"
+        Type="Dialog.Category.Okay">
+        <Body>            
+            <div>
+                <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
+                <label class="custom-file-label" for="inputGroupFile01">Upload Receipt</label>
+            </div>
+            @if (message != null)
+            {
+                <p class="loading">
+                    @message
+                </p>
+            }
+            @if (errorMessage != null)
+            {
+                <p class="error"><em>@errorMessage</em></p>
+            }
+        </Body>
+    </Dialog>
+}
+@code {
+    private bool DialogIsOpen = false;
+    private string message = "";
+    public string errorMessage { get; set; } = "";
+
+    private void OpenDialog()
+    {
+        DialogIsOpen = true;
+
+        ClearMessage();
+        ClearErrorMessage();
+    }
+
+    private void OnDialogClose(bool isOk)
+    {
+        if (isOk)
+        {
+
+        }
+        DialogIsOpen = false;
+    }
+
+    private void SetProcessing()
+    {
+        message = "Processing receipt...";
+    }
+
+    private void ClearMessage()
+    {
+        message = string.Empty;
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = string.Empty;
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        ClearErrorMessage();
+        SetProcessing();
+
+        try
+        {
+            string uploadedFileName = await Uploader.Upload(e.File);
+            state.NotifyLoadingReceiptChanged(this, uploadedFileName);
+
+            await Task.Delay(3000);
+
+            ClearMessage();
+            message = @"Your file has been uploaded and is now being processed. 
+            In the meantime, you can continue using the app.";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            errorMessage = ex.Message;
+        }
+    }
+}

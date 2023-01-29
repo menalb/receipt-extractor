@@ -15,7 +15,12 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <h1 class="receipts-header">
-    Receipts
+    <span class="d-none d-sm-block"> Receipts</span>
+</h1>
+<div class="file-input-group input-group mb-2">
+    <div class="custom-file">
+        <ReceiptApp.Components.Dialogs.FileUploadDialog />
+    </div>
     <span class="header-actions">
         <NavLink title="Add Receipt" class="btn btn-primary" href=@($"register-receipt")>
             <i class="fas fa-plus"></i>
@@ -24,12 +29,6 @@
             <i class="fas fa-sync-alt"></i>
         </button>
     </span>
-</h1>
-<div class="file-input-group input-group mb-2">
-    <div class="custom-file">
-        <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
-        <label class="custom-file-label" for="inputGroupFile01">Upload Receipt</label>
-    </div>
 </div>
 
 @if (loadingMessage != null)
@@ -153,31 +152,39 @@ else
         }
     }
 
-    private async Task LoadFiles(InputFileChangeEventArgs e)
-    {
-        ClearErrorMessage();
-        SetProcessing();
+    //private async Task LoadFiles(InputFileChangeEventArgs e)
+    //{
+    //    ClearErrorMessage();
+    //    SetProcessing();
 
-        try
-        {
-            string uploadedFileName = await Uploader.Upload(e.File);
-            state.NotifyLoadingReceiptChanged(this, uploadedFileName);
+    //    try
+    //    {
+    //        string uploadedFileName = await Uploader.Upload(e.File);
+    //        state.NotifyLoadingReceiptChanged(this, uploadedFileName);
 
-            await Task.Delay(3000);
+    //        await Task.Delay(3000);
 
-            ClearMessage();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            errorMessage = ex.Message;
-        }
-    }
+    //        ClearMessage();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine(ex.Message);
+    //        errorMessage = ex.Message;
+    //    }
+    //}
 
     private void OnSelectedDay(DateTime day)
     {
-        tableReceipts = all_receipts.Where(r => r.day == day);
-        selectedDay = day;
+        if (selectedDay.HasValue && selectedDay.Value == day)
+        {
+            selectedDay = null;
+            tableReceipts = all_receipts;
+        }
+        else
+        {
+            tableReceipts = all_receipts.Where(r => r.day == day);
+            selectedDay = day;
+        }
         StateHasChanged();
     }
 
