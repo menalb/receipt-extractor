@@ -133,3 +133,9 @@ a,
     .loading-progress-text:after {
         content: var(--blazor-load-percentage-text, "Loading");
     }
+
+.loading-app {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-top: 1rem;
+}
