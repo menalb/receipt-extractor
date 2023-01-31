@@ -19,6 +19,7 @@ namespace ReceiptApp.Services
             var dayFrom = from ?? DateTime.Now
                 .AddDays(-30);
             var fromParam = dayFrom.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toParam = dayFrom.AddMonths(1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
             if (_useMockedReceipts)
             {
@@ -28,7 +29,7 @@ namespace ReceiptApp.Services
             }
             else
             {
-                var receipts = await _api.Get<ReceiptsResult>(receipts_url + $"?from={fromParam}");
+                var receipts = await _api.Get<ReceiptsResult>(receipts_url + $"?from={fromParam}&to={toParam}");
                 return receipts?.Receipts ?? new List<ReceiptSummary>();
             }
         }
