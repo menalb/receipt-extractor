@@ -2,7 +2,7 @@
 @using Model;
 @using System.Globalization;
 
-<BarChart @ref="lineChart"
+<BarChart @ref="barChart"
           TItem="ReceiptTotal"
           Options="lineChartOptions"
           Width="Width.Max100"
@@ -14,7 +14,7 @@
     [Parameter]
     public EventCallback<DateTime> SelectedDay { get; set; }
 
-    BarChart<ReceiptTotal> lineChart = new BarChart<ReceiptTotal>();
+    BarChart<ReceiptTotal> barChart = new BarChart<ReceiptTotal>();
 
     List<ReceiptTotal> Totals = new();
 
@@ -34,16 +34,16 @@
     async Task HandleRedraw()
     {
         UpdateTotals();
-        if (lineChart.Data != null)
+        if (barChart.Data != null)
         {
-            await lineChart.SetData(0, Totals);
+            await barChart.SetData(0, Totals);
         }
         else
         {
-            await lineChart.AddDataSet(GetLineChartDataset());
+            await barChart.AddDataSet(GetLineChartDataset());
         }
     }
-
+    
     BarChartOptions lineChartOptions = new()
         {
             Parsing = new ChartParsing
@@ -92,11 +92,13 @@
             {
                 Data = Totals,
                 BackgroundColor = backgroundColors,
-                BorderColor = borderColors
+                BorderColor = borderColors,
+                HoverBackgroundColor = hoverBackgroundColors,
             };
     }
 
     List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 0.2f) };
     List<string> borderColors = new List<string> { ChartColor.FromRgba(255, 159, 64, 1f) };
+    List<string> hoverBackgroundColors = new List<string> { ChartColor.FromRgba(255, 0, 0, 0.2f) };
     public record ReceiptTotal(string dayLabel, decimal total, DateTime day);
 }
