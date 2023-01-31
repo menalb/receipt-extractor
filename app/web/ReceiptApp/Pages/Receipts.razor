@@ -54,7 +54,7 @@
 }
 else
 {
-    <WeeklyStatus Receipts="receipts" SelectedDay="OnSelectedDay" />
+    <ReceiptsStatus Receipts="receipts" SelectedDay="OnSelectedDay" />
 
     @if (selectedDay.HasValue)
     {
@@ -65,13 +65,8 @@ else
             </span>
         </div>
     }
-    @foreach (var month in tableReceipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
-    {
-        <h3>
-            @FormatMonthName(month.Key.month, month.Key.year)
-        </h3>
-        <ReceiptsTable Receipts="month" ShowTableHeader="false" />
-    }
+
+    <ReceiptsList Receipts="tableReceipts" />
 }
 
 @code {
@@ -127,10 +122,6 @@ else
         receipts = all_receipts.Select(r => r);
         tableReceipts = receipts;
     }
-
-    private string FormatMonthName(int month, int year)
-    =>
-    $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)} - {year}";
 
     private async Task FilterByMonth(string month)
     {

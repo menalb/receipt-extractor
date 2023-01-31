@@ -33,7 +33,7 @@
 
 
 <table class="table d-block d-sm-none">
-    @if(ShowTableHeader)
+    @if (ShowTableHeader)
     {
         <thead>
             <tr>
@@ -62,7 +62,7 @@
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
     [Parameter]
-    public bool ShowTableHeader { get; set; } = true;
+    public bool ShowTableHeader { get; set; } = true;    
 
     private string BuildTagsSummary(IEnumerable<string> tags)
     {
@@ -77,5 +77,5 @@
     private void NavigateToReceipt(ReceiptListItem receipt)
     {
         NavManager.NavigateTo($"receipt/{receipt.id}");
-    }
+    }   
 }

@@ -2,7 +2,7 @@
 
 :root {
     --primary-color: #fd7e14;
-    --secondary-color: #fff6e5;
+    --secondary-color: #ff9f40;
     --background-color: black;
 }
 
@@ -132,6 +132,7 @@ a,
 
     .loading-progress-text:after {
         content: var(--blazor-load-percentage-text, "Loading");
+        color:var(--secondary-color);
     }
 
 .loading-app {

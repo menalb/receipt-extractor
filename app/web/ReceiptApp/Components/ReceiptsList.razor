@@ -1,0 +1,44 @@
+﻿@using ReceiptApp.Model;
+@using System.Globalization;
+
+<div class="search d-none d-sm-block">
+    <input type="text" @bind-value="SearchText" placeholder="Search.." @bind-value:event="oninput">
+</div>
+
+@foreach (var month in FilteredReceipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
+{
+    <h3 class="tableHeader">
+        <span>
+            @FormatMonthName(month.Key.month, month.Key.year)
+        </span>
+        <em>
+            @FormatTotal(month)
+        </em>
+    </h3>
+    <ReceiptsTable Receipts="month" ShowTableHeader="false" />
+}
+@code {
+    [Parameter]
+    public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
+
+    private string SearchText = "";
+    private IEnumerable<ReceiptListItem> FilteredReceipts =>
+    Receipts.Where(r => Compare(r.shop, SearchText)
+        || Compare(r.day.ToShortDateString(), SearchText)
+        || Compare(string.Join("", r.tags), SearchText)
+        || Compare(r.total.ToString(), SearchText)
+    );
+
+    private string FormatMonthName(int month, int year)
+    =>
+    $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)} {year}";
+
+    private string FormatTotal(IEnumerable<ReceiptListItem> items)
+    =>
+    $"€{items.Sum(i => i.total)}";
+
+    private static bool Compare(string s1, string s2)
+    =>
+    s1.Contains(s2, StringComparison.InvariantCultureIgnoreCase);
+
+}
