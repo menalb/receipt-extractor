@@ -1,5 +1,5 @@
-﻿@page "/receipts"
-@page "/receipts/{JobId}"
+﻿@page "/"
+@page "/receipts"
 @using Model
 @using Services
 @using System.Globalization
@@ -69,10 +69,7 @@ else
     <ReceiptsList Receipts="tableReceipts" />
 }
 
-@code {
-
-    [Parameter]
-    public string JobId { get; set; } = "";
+@code {    
     public string MonthFilter { get; set; } = "";
     public string? loadingMessage { get; set; }
     public string errorMessage { get; set; } = "";
@@ -107,11 +104,6 @@ else
         r.Total)
         ).OrderByDescending(r => r.day);
 
-        if (all_receipts.Any() && !string.IsNullOrEmpty(JobId))
-        {
-            all_receipts = all_receipts.Where(r => r.JobId == JobId);
-        }
-
         UpdatePageData();
 
         StateHasChanged();
@@ -142,27 +134,6 @@ else
             UpdatePageData();
         }
     }
-
-    //private async Task LoadFiles(InputFileChangeEventArgs e)
-    //{
-    //    ClearErrorMessage();
-    //    SetProcessing();
-
-    //    try
-    //    {
-    //        string uploadedFileName = await Uploader.Upload(e.File);
-    //        state.NotifyLoadingReceiptChanged(this, uploadedFileName);
-
-    //        await Task.Delay(3000);
-
-    //        ClearMessage();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Console.WriteLine(ex.Message);
-    //        errorMessage = ex.Message;
-    //    }
-    //}
 
     private void OnSelectedDay(DateTime day)
     {

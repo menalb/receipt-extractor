@@ -7,10 +7,14 @@
 <AuthorizeView>
     <Authorized>
 
-        <button class="nav-link btn btn-link logout-button d-none d-sm-inline" @onclick="BeginSignOut">Log out</button>
-        <span title=@GetName(context.User)>
-            <i class="fas fa-user"></i>
-        </span>
+        <button class="nav-link btn btn-link logout-button" @onclick="BeginSignOut">
+            <span class="d-none d-sm-inline">
+                Log out
+            </span>
+            <span title=@GetName(context.User)>
+                <i class="fas fa-user"></i>
+            </span>
+        </button>
 
     </Authorized>
     <NotAuthorized>
