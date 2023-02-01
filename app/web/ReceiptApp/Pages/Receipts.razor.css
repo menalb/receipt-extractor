@@ -1,12 +1,23 @@
-.file-input-group{
+.file-input-group {
     width: 20rem;
 }
 
-.receipts-header{
+.receipts-header {
     display: flex;
     justify-content: space-between;
-    
 }
-.receipts-header .header-actions{
-    padding-right: 0.5rem;;
+
+    .receipts-header .header-actions {
+        padding-right: 0.5rem;
+    }
+
+.edit-receipt {
+    margin-top: 1rem;
+    padding: 0;
+    border-left: 2px solid black;
+}
+
+.edit-receipt-content {
+    padding: 2rem 1rem 1rem 1rem;
+    background-color: rgba(255,159,64,0.2)
 }

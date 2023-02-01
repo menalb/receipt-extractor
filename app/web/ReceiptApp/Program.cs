@@ -22,6 +22,8 @@ namespace ReceiptApp
 
             builder.Services.AddSingleton<WebSocketApiConfig>(new WebSocketApiConfig{Uri= builder.Configuration["WebSocketApi:Uri"] ?? throw new ArgumentNullException("Invalid Websocket API Uri in configuration") } );
 
+            builder.Services.AddSingleton<BrowserResizeService>();
+
             builder.Services.AddTransient<TokenService>();
             builder.Services.AddTransient<ReceiptApi>();
             builder.Services.AddSingleton<ReceiptExport>();

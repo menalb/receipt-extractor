@@ -132,7 +132,7 @@ a,
 
     .loading-progress-text:after {
         content: var(--blazor-load-percentage-text, "Loading");
-        color:var(--secondary-color);
+        color: var(--secondary-color);
     }
 
 .loading-app {
@@ -144,4 +144,9 @@ a,
     width: 100%;
     display: inline-block;
     padding: 1rem;
+}
+
+.fa-eye {
+    color: var(--primary-color);
+    cursor: pointer;
 }

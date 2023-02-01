@@ -15,11 +15,14 @@
             @FormatTotal(month)
         </em>
     </h3>
-    <ReceiptsTable Receipts="month" ShowTableHeader="false" />
+    <ReceiptsTable Receipts="month" ShowTableHeader="false" OnSelectedReceipt="SelectReceipt" />
 }
 @code {
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
+
+    [Parameter]
+    public EventCallback<string> OnSelectedReceipt { get; set; }
 
     private string SearchText = "";
     private IEnumerable<ReceiptListItem> FilteredReceipts =>
@@ -41,4 +44,8 @@
     =>
     s1.Contains(s2, StringComparison.InvariantCultureIgnoreCase);
 
+    private async Task SelectReceipt(string id)
+    {        
+        await OnSelectedReceipt.InvokeAsync(id);        
+    }
 }

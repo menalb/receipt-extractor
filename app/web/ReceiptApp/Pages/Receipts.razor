@@ -11,6 +11,9 @@
 @inject ReceiptQuery Query
 @inject UploaderService Uploader
 @inject ReceiptLoaderStateService state
+@inject NavigationManager NavManager
+@inject Services.BrowserResizeService BrowserResize;
+
 @implements IDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -66,10 +69,22 @@ else
         </div>
     }
 
-    <ReceiptsList Receipts="tableReceipts" />
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <ReceiptsList Receipts="tableReceipts" OnSelectedReceipt="SelectReceipt" />
+        </div>
+        <div class="col-md-6 d-none d-md-block edit-receipt">
+            @if (!string.IsNullOrEmpty(SelectedReceiptId)  && Size >= ScreenSize.MD)
+            {
+                <div class="edit-receipt-content">
+                    <EditReceipt ReceiptId="@SelectedReceiptId" />
+                </div>
+            }
+        </div>
+    </div>
 }
 
-@code {    
+@code {
     public string MonthFilter { get; set; } = "";
     public string? loadingMessage { get; set; }
     public string errorMessage { get; set; } = "";
@@ -80,6 +95,8 @@ else
     private DateTime? selectedDay;
 
     private DateTime? MonthYear = null;
+    private string? SelectedReceiptId = null;
+    private ScreenSize Size;
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,7 +105,19 @@ else
         ClearMessage();
         ClearErrorMessage();
 
+        BrowserResize.Init();
+
+        BrowserResize.OnScreenResize += (c, s) => OnResize(s);
+
         await Refresh();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            OnResize(await BrowserResize.GetScreenSize());
+        }
     }
 
     public async Task Refresh()
@@ -147,6 +176,7 @@ else
             tableReceipts = all_receipts.Where(r => r.day == day);
             selectedDay = day;
         }
+        SelectedReceiptId = string.Empty;
         StateHasChanged();
     }
 
@@ -154,6 +184,19 @@ else
     {
         selectedDay = null;
         UpdatePageData();
+    }
+
+    private void SelectReceipt(string id)
+    {
+        if (Size >= ScreenSize.MD)
+        {
+            SelectedReceiptId = id;
+        }
+        else
+        {
+            Console.WriteLine(id);
+            NavManager.NavigateTo($"receipt/{id}");
+        }
     }
 
     private void SetProcessing()
@@ -171,8 +214,16 @@ else
         errorMessage = string.Empty;
     }
 
+    private void OnResize(ScreenSize size)
+    {
+        Console.WriteLine(size);
+        Size = size;
+        StateHasChanged();
+    }
+
     void IDisposable.Dispose()
     {
         state.OnLoadedReceiptChanged -= async (component, receiptId) => await Refresh();
+        BrowserResize.OnScreenResize -= (c, s) => OnResize(s);
     }
 }

@@ -11,7 +11,7 @@ namespace ReceiptApp.Services
         public ReceiptQuery(ReceiptApi api)
         {
             _api = api;
-            _useMockedReceipts = true;
+            _useMockedReceipts = false;
         }
 
         public async Task<IEnumerable<ReceiptSummary>> GetAll(DateTime? from = null)

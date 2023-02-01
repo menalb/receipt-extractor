@@ -1,6 +1,5 @@
 @using Model
 @using Services
-@inject NavigationManager NavManager
 
 <table class="table d-none d-sm-block">
     <thead>
@@ -16,9 +15,7 @@
         {
             <tr>
                 <td>
-                    <NavLink title="@receipt.id.Substring(0,8)" class="nav-link" href=@($"receipt/{receipt.id}")>
-                        <i class="fas fa-eye"></i>
-                    </NavLink>
+                    <i title="open receipt detail" @onclick="()=>SelectReceipt(receipt)" class="fas fa-eye"></i>
                 </td>
                 <td>@receipt.day.ToShortDateString()</td>
                 <td title="@BuildShopTitle(receipt)">
@@ -46,7 +43,7 @@
     <tbody>
         @foreach (var receipt in Receipts)
         {
-            <tr @onclick="()=>NavigateToReceipt(receipt)">
+            <tr @onclick="()=>SelectReceipt(receipt)">
                 <td>@receipt.day.ToShortDateString()</td>
                 <td title="@BuildShopTitle(receipt)">
                     <i aria-hidden="true" class="@TagsService.GetKindIcon(receipt.tags)"></i>
@@ -62,7 +59,9 @@
     [Parameter]
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
     [Parameter]
-    public bool ShowTableHeader { get; set; } = true;    
+    public bool ShowTableHeader { get; set; } = true;
+    [Parameter]
+    public EventCallback<string> OnSelectedReceipt { get; set; }
 
     private string BuildTagsSummary(IEnumerable<string> tags)
     {
@@ -74,8 +73,8 @@
         return $"{BuildTagsSummary(receipt.tags)} {receipt.shop}";
     }
 
-    private void NavigateToReceipt(ReceiptListItem receipt)
+    private async Task SelectReceipt(ReceiptListItem receipt)
     {
-        NavManager.NavigateTo($"receipt/{receipt.id}");
-    }   
+        await OnSelectedReceipt.InvokeAsync(receipt.id);
+    }
 }
