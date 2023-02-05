@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  AuthorizerARN:
+    Type: String
+    Description: Cognito ARN  
+  BucketName:
+    Type: String
+    Description: Bucket Name
+
+Resources:
+
+  # HTTP API
+  MyApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+        AllowOrigins:
+          - "*"      
+
+  ReceiptUploadApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ""
+      Handler: "ReceiptApp.Images.Functions::ReceiptApp.Images.Functions.Functions::GetForUpload"
+      Runtime: dotnet6
+      MemorySize: 256      
+      Environment:
+        Variables:
+          BucketName: !Ref BucketName
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref BucketName
+        - Statement:
+            - Effect: Allow
+              Resource: !Sub "arn:aws:s3:::${BucketName}/"
+              Action:
+                - s3:putObjectAcl
+      Events:
+        UploadAssetAPI:
+          Type: HttpApi
+          Properties:
+            Path: /uploads
+            Method: get
+            ApiId: !Ref MyApi
+
+  ReceiptGetApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+        CodeUri: ""
+        Handler: "ReceiptApp.Images.Functions::ReceiptApp.Images.Functions.Functions::GetImage"
+        Runtime: dotnet6
+        MemorySize: 256      
+        Environment:
+          Variables:
+            BucketName: !Ref BucketName
+        Policies:
+            - S3WritePolicy:
+                BucketName: !Ref BucketName
+            - Statement:
+                - Effect: Allow
+                  Resource: !Sub "arn:aws:s3:::${BucketName}/"
+                  Action:
+                    - s3:*
+        Events:
+          UploadAssetAPI:
+            Type: HttpApi
+            Properties:
+                Path: /get
+                Method: get
+                ApiId: !Ref MyApi
+
+  S3UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - HEAD
+            AllowedOrigins:
+              - "*"
+
+Outputs:
+  APIendpoint:
+    Description: "HTTP API endpoint URL"
+    Value: !Sub "https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com"
+  S3UploadBucketName:
+    Description: "S3 bucket for application uploads"
+    Value: !Ref "S3UploadBucket"
