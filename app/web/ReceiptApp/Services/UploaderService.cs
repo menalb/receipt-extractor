@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace ReceiptApp.Services
 {
-    public class UploaderService
+    public class ImageService
     {
         private readonly TokenService _tokenService;
         private readonly HttpClient _httpClient;
 
         private readonly ReceiptLoaderStateService _state;
 
-        public UploaderService(TokenService tokenService, HttpClient httpClient, ReceiptLoaderStateService state)
+        public ImageService(TokenService tokenService, HttpClient httpClient, ReceiptLoaderStateService state)
         {
             _tokenService = tokenService;
             _httpClient = httpClient;
@@ -53,6 +53,22 @@ namespace ReceiptApp.Services
                 return newUploadResults;
             }
             throw new Exception("Unable do upload the file");
+        }
+
+        public async Task<string> GetImageURL(string receiptId)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "upload-receipt/" + receiptId);
+            request.Headers.Authorization = await _tokenService.BuildAuthHeader();
+
+            var response = (await _httpClient.SendAsync(request));
+            if (response.IsSuccessStatusCode)
+            {
+                var url = (
+                    await System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<ApiResponse>(response.Content)
+                    )?.UploadURL ?? throw new Exception("Unable to Upload the file");
+                return url;
+            }
+            return "";
         }
     }
     class ApiResponse

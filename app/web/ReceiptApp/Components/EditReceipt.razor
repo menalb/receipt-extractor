@@ -19,6 +19,26 @@ else
     <EditForm EditContext="@editContext" class="" OnSubmit="@HandleSubmit">
 
         <p class="commands">
+            @if (!ShowImage)
+            {
+                <button type="button"
+                    class="btn btn-primary"
+                    title="Show receipt image"
+                    @onclick="@HandleShowImage"
+                    disabled="@isUpdating">
+                    Show Image
+                </button>
+            }
+            else
+            {
+                <button type="button"
+                    class="btn btn-primary"
+                    title="Show receipt image"
+                    @onclick="@HandleShowImage"
+                    disabled="@isUpdating">
+                    Hide Image
+                </button>
+            }
             <button type="button" class="btn btn-primary btn-excel" title="Excel export" @onclick="@(e=>HandleExport())">
                 <i class="fas fa-file-excel"></i>
             </button>
@@ -30,7 +50,10 @@ else
             }
             <button type="submit" class="btn btn-primary" disabled="@isUpdating">Save</button>
         </p>
-        <h2>Receipt</h2>
+        @if (ShowImage && !string.IsNullOrEmpty(ReceiptId))
+        {
+            <ReceiptImage ReceiptId="@ReceiptId" />
+        }
         <DataAnnotationsValidator />
         <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
 
@@ -188,6 +211,8 @@ else
 
     private IEnumerable<ReceiptItem> ReceiptItems = new List<ReceiptItem>();
 
+    private bool ShowImage = false;
+
     private void SetTag(string tag)
     {
         if (string.IsNullOrWhiteSpace(Tags))
@@ -201,11 +226,12 @@ else
     }
 
     protected override async Task OnParametersSetAsync()
-    {        
+    {
         await Init();
     }
     private async Task Init()
     {
+        ShowImage = false;
         if (string.IsNullOrEmpty(ReceiptId)) return;
 
         isLoading = true;
@@ -247,6 +273,11 @@ else
     {
         ReceiptItems = ReceiptItems.Where(item => item.Index != receiptItemIndex);
         UpdateTotal();
+    }
+
+    private void HandleShowImage()
+    {
+        ShowImage = !ShowImage;
     }
 
     private async Task HandleExport()

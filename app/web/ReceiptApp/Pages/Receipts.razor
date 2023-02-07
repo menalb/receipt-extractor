@@ -9,7 +9,6 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject TokenService TokenService
 @inject ReceiptQuery Query
-@inject UploaderService Uploader
 @inject ReceiptLoaderStateService state
 @inject NavigationManager NavManager
 @inject Services.BrowserResizeService BrowserResize;
@@ -20,6 +19,7 @@
 <h1 class="receipts-header">
     <span class="d-none d-sm-block"> Receipts</span>
 </h1>
+
 <div class="file-input-group input-group mb-2">
     <div class="custom-file">
         <ReceiptApp.Components.Dialogs.FileUploadDialog />
@@ -74,7 +74,7 @@ else
             <ReceiptsList Receipts="tableReceipts" OnSelectedReceipt="SelectReceipt" />
         </div>
         <div class="col-md-6 d-none d-md-block edit-receipt">
-            @if (!string.IsNullOrEmpty(SelectedReceiptId)  && Size >= ScreenSize.MD)
+            @if (!string.IsNullOrEmpty(SelectedReceiptId) && Size >= ScreenSize.MD)
             {
                 <div class="edit-receipt-content">
                     <EditReceipt ReceiptId="@SelectedReceiptId" />
@@ -96,11 +96,11 @@ else
 
     private DateTime? MonthYear = null;
     private string? SelectedReceiptId = null;
-    private ScreenSize Size;
+    private ScreenSize Size;    
 
     protected override async Task OnInitializedAsync()
     {
-        state.OnLoadedReceiptChanged += async (component, receiptId) => await Refresh();
+        state.OnLoadedReceiptChanged += async (component, receiptId) => await Refresh();        
 
         ClearMessage();
         ClearErrorMessage();

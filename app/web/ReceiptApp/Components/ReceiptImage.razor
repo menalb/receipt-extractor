@@ -1,0 +1,29 @@
+﻿@using ReceiptApp.Services;
+@inject ImageService ImageService
+
+<div>
+    @if (isLoading)
+    {
+        <em>Loading image</em>
+    }
+    else
+    {
+        <img class="receipt-image" src="@ImageUrl" />
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public string ReceiptId { get; set; } = "";
+
+    private string ImageUrl = "";
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        ImageUrl = await ImageService.GetImageURL(ReceiptId);
+        isLoading = false;
+    }
+}
