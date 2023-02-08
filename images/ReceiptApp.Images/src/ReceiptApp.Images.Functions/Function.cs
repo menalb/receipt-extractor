@@ -5,6 +5,8 @@ using System.Net;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.S3;
+using System.Threading.Tasks;
+using Amazon.DynamoDBv2;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -21,15 +23,16 @@ namespace ReceiptApp.Images.Functions
         /// <summary>
         /// Default constructor that Lambda will invoke.
         /// </summary>
-        public Functions() 
+        public Functions()
         {
             var s3Client = new AmazonS3Client();
-            _imageGateway = new S3ImagesGateway(s3Client, BucketName);
+            var dynamoDbClient = new AmazonDynamoDBClient();
+            _imageGateway = new S3ImagesGateway(s3Client, BucketName, dynamoDbClient);
         }
 
-        public Functions(IAmazonS3 s3Client)
+        public Functions(IAmazonS3 s3Client, IAmazonDynamoDB dynamoDbClient)
         {
-            _imageGateway = new S3ImagesGateway(s3Client, BucketName);
+            _imageGateway = new S3ImagesGateway(s3Client, BucketName, dynamoDbClient);
         }
 
         /// <summary>
@@ -66,7 +69,7 @@ namespace ReceiptApp.Images.Functions
         /// </summary>
         /// <param name="request"></param>
         /// <returns>The API Gateway response.</returns>
-        public APIGatewayProxyResponse GetImage(APIGatewayProxyRequest request, ILambdaContext context)
+        public async Task<APIGatewayProxyResponse> GetImage(APIGatewayProxyRequest request, ILambdaContext context)
         {
             context.Logger.LogLine($"{nameof(GetImage)} Request\n");
 
@@ -77,20 +80,24 @@ namespace ReceiptApp.Images.Functions
                 return MethodNotAllowed;
             }
 
-            var prefix = request.RequestContext.Authorizer.Claims["sub"];
-            var receiptId = request.PathParameters["receiptid"];
+            var userId = request.RequestContext.Authorizer.Claims["sub"];
+            var receiptId = request.PathParameters["receiptid"]; 
+            
+            try
+            {
+                var response = await _imageGateway.GetImageURL(userId, receiptId);
 
-            var key = $"{prefix}/{receiptId}.jpeg";
+                context.Logger.LogLine("key: " + response.URL);
 
-            context.Logger.LogLine("key: " + key);
+                var message = new ApiResponse(response.Key, response.URL);
 
-            var uploadURL = _imageGateway.GetImageURL(key);
-
-            context.Logger.LogLine("key: " + uploadURL);
-
-            var message = new ApiResponse(key, uploadURL);
-
-            return OK(message);
+                return OK(message);
+            }
+            catch(Exception e)
+            {
+                context.Logger.LogError(e.Message);
+                return ServerError;
+            }
         }
 
 
@@ -118,6 +125,18 @@ namespace ReceiptApp.Images.Functions
                     {"Access-Control-Allow-Methods", "*"},
                 }
             };
+
+        private static APIGatewayProxyResponse ServerError=>
+           new()
+           {
+               StatusCode = (int)HttpStatusCode.InternalServerError,
+               Headers = new Dictionary<string, string>
+               {
+                    { "Content-Type", "application/json" },
+                    {"Access-Control-Allow-Origin", "*"},
+                    {"Access-Control-Allow-Methods", "*"},
+               }
+           };
     }
 
     record ApiResponse(string Key, string UploadURL);

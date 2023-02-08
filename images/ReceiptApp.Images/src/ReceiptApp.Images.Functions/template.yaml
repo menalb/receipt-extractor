@@ -58,11 +58,16 @@ Resources:
         CodeUri: ""
         Handler: "ReceiptApp.Images.Functions::ReceiptApp.Images.Functions.Functions::GetImage"
         Runtime: dotnet6
-        MemorySize: 256      
+        MemorySize: 256
+        Timeout: 30
         Environment:
           Variables:
             BucketName: !Ref BucketName
         Policies:
+            - DynamoDBReadPolicy:
+                TableName: receipt-analyzer-raw
+            - DynamoDBReadPolicy:
+                TableName: receipts-analyzer-jobs
             - S3WritePolicy:
                 BucketName: !Ref BucketName
             - Statement:

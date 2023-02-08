@@ -1,7 +1,11 @@
-﻿namespace ReceiptApp.Images.Functions;
+﻿using System.Threading.Tasks;
+
+namespace ReceiptApp.Images.Functions;
 
 public interface IImagesGateway
 {
     string GetUploadURL(string imageName);
-    string GetImageURL(string imageName);
+    Task<GetImageURLResponse> GetImageURL(string userId, string receiptId);
 }
+
+public record GetImageURLResponse(string Key, string URL);
