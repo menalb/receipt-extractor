@@ -22,20 +22,20 @@ else
             @if (!ShowImage)
             {
                 <button type="button"
-                    class="btn btn-primary"
-                    title="Show receipt image"
-                    @onclick="@HandleShowImage"
-                    disabled="@isUpdating">
+                class="btn btn-primary"
+                title="Show receipt image"
+                @onclick="@HandleShowImage"
+                disabled="@isUpdating">
                     Show Image
                 </button>
             }
             else
             {
                 <button type="button"
-                    class="btn btn-primary"
-                    title="Show receipt image"
-                    @onclick="@HandleShowImage"
-                    disabled="@isUpdating">
+                class="btn btn-primary"
+                title="Show receipt image"
+                @onclick="@HandleShowImage"
+                disabled="@isUpdating">
                     Hide Image
                 </button>
             }
@@ -50,133 +50,137 @@ else
             }
             <button type="submit" class="btn btn-primary" disabled="@isUpdating">Save</button>
         </p>
-        @if (ShowImage && !string.IsNullOrEmpty(ReceiptId))
-        {
-            <ReceiptImage ReceiptId="@ReceiptId" />
-        }
-        <DataAnnotationsValidator />
-        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
-
-        <section>
-            <div class="form-row">
-                <label for="Tags" class="col-sm-2 col-form-label">Tags:</label>
-                <div class="col-sm-10">
-                    <InputText id="Tags" @bind-Value="Tags" class="form-control" />
-                    @foreach (var tag in defaultTags)
-                    {
-                        <button type="button" class="btn btn-primary" @onclick="@(e=>SetTag(tag))" title="@tag">
-                            <i class="@TagsService.GetKindIcon(tag)"></i>
-                        </button>
-                    }
-                </div>
-            </div>
-
-            <div class="form-row">
-                <label for="Day" class="col-sm-2 col-form-label">Day:</label>
-                <div class="col-sm-10">
-                    <InputDate id="Day" @bind-Value="Day" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="Total" class="col-sm-2 col-form-label">Total:</label>
-                <div class="col-sm-10">
-                    <InputNumber id="Total" @bind-Value="Total" @bind-Value:format="F2" @onblur="UpdateTotal"
-                             class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <span class="col-sm-2">Real Total:</span>
-                <span class="col-sm-10">
-                    <span class="@PriceAlterCss()">
-                        @RealTotal
-                    </span>
-                </span>
-            </div>
-
-            <h3>Shop</h3>
-            <div class="form-row">
-                <label for="ShopName" class="col-sm-2 col-form-label">Name:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopName" @bind-Value="receiptDetails.Shop.Name" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="ShopOwner" class="col-sm-2 col-form-label">Owner:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopOwner" @bind-Value="receiptDetails.Shop.Owner" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="ShopAddress" class="col-sm-2 col-form-label">Address:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopAddress" @bind-Value="receiptDetails.Shop.Address" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="ShopCity" class="col-sm-2 col-form-label">City:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopCity" @bind-Value="receiptDetails.Shop.City" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="ShopPhone" class="col-sm-2 col-form-label">Phone:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopPhone" @bind-Value="receiptDetails.Shop.Phone" class="form-control" />
-                </div>
-            </div>
-            <div class="form-row">
-                <label for="ShopVat" class="col-sm-2 col-form-label">VAT:</label>
-                <div class="col-sm-10">
-                    <InputText id="ShopVat" @bind-Value="receiptDetails.Shop.VAT" class="form-control" />
-                </div>
-            </div>
-        </section>
-
-        <h3>Items</h3>
-        <section>
-            @foreach (var receiptItem in ReceiptItems)
+        <div class="receipt-container">
+            @if (ShowImage)
             {
-                <div class="form-row receipt-items">
-                    <label for="ItemName" class="col-sm-1 col-form-label">Name:</label>
-                    <div class="col-sm-4">
-                        <InputText id="ItemName" @bind-Value="receiptItem.Item.Name" class="form-control" />
-                    </div>
-                    <label for="ItemVat" class="col-sm-1 col-form-label">VAT:</label>
-                    <div class="col-sm-2">
-                        <InputNumber id="ItemVat" @bind-Value="receiptItem.Item.VAT" @bind-Value:format="F2"
-                             class="form-control" />
-                    </div>
-                    <label for="ItemPrice" class="col-sm-1 col-form-label">Price:</label>
-                    <div class="col-sm-2">
-                        <InputNumber id="ItemPrice" @bind-Value="receiptItem.Item.Price" @bind-Value:format="F2"
-                             @onblur="UpdateTotal" class="form-control" />
-                    </div>
-                    <div class="col-sm-12 col-md-1 text-center">
-                        <button type="button" class="btn btn-primary" @onclick="@(e=>Remove(receiptItem.Index))"
-                        title="Remove">
-                            <i class="far fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </div>
-
+                <ReceiptImage ReceiptId="@ReceiptId" />
             }
-        </section>
-        <section class="commands">
-            <div class="row ">
-                <div class="col-sm-12">
-                    <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <button type="button" class="btn btn-primary" @onclick="@(e=>Delete())" title="Delete">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
+            <section class="edit-form">
+                <DataAnnotationsValidator />
+                <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
+
+                <section>
+                    <div class="form-row">
+                        <label for="Tags" class="col-sm-2 col-form-label">Tags:</label>
+                        <div class="col-sm-10">
+                            <InputText id="Tags" @bind-Value="Tags" class="form-control" />
+                            @foreach (var tag in defaultTags)
+                            {
+                                <button type="button" class="btn btn-primary" @onclick="@(e=>SetTag(tag))" title="@tag">
+                                    <i class="@TagsService.GetKindIcon(tag)"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="Day" class="col-sm-2 col-form-label">Day:</label>
+                        <div class="col-sm-10">
+                            <InputDate id="Day" @bind-Value="Day" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="Total" class="col-sm-2 col-form-label">Total:</label>
+                        <div class="col-sm-10">
+                            <InputNumber id="Total" @bind-Value="Total" @bind-Value:format="F2" @onblur="UpdateTotal"
+                                     class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <span class="col-sm-2">Real Total:</span>
+                        <span class="col-sm-10">
+                            <span class="@PriceAlterCss()">
+                                @RealTotal
+                            </span>
+                        </span>
+                    </div>
+
+                    <h3>Shop</h3>
+                    <div class="form-row">
+                        <label for="ShopName" class="col-sm-2 col-form-label">Name:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopName" @bind-Value="receiptDetails.Shop.Name" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ShopOwner" class="col-sm-2 col-form-label">Owner:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopOwner" @bind-Value="receiptDetails.Shop.Owner" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ShopAddress" class="col-sm-2 col-form-label">Address:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopAddress" @bind-Value="receiptDetails.Shop.Address" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ShopCity" class="col-sm-2 col-form-label">City:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopCity" @bind-Value="receiptDetails.Shop.City" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ShopPhone" class="col-sm-2 col-form-label">Phone:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopPhone" @bind-Value="receiptDetails.Shop.Phone" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ShopVat" class="col-sm-2 col-form-label">VAT:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ShopVat" @bind-Value="receiptDetails.Shop.VAT" class="form-control" />
+                        </div>
+                    </div>
+                </section>
+
+                <h3>Items</h3>
+                <section>
+                    @foreach (var receiptItem in ReceiptItems)
+                    {
+                        <div class="form-row receipt-items">
+                            <label for="ItemName" class="col-sm-1 col-form-label">Name:</label>
+                            <div class="col-sm-4">
+                                <InputText id="ItemName" @bind-Value="receiptItem.Item.Name" class="form-control" />
+                            </div>
+                            <label for="ItemVat" class="col-sm-1 col-form-label">VAT:</label>
+                            <div class="col-sm-2">
+                                <InputNumber id="ItemVat" @bind-Value="receiptItem.Item.VAT" @bind-Value:format="F2"
+                                     class="form-control" />
+                            </div>
+                            <label for="ItemPrice" class="col-sm-1 col-form-label">Price:</label>
+                            <div class="col-sm-2">
+                                <InputNumber id="ItemPrice" @bind-Value="receiptItem.Item.Price" @bind-Value:format="F2"
+                                     @onblur="UpdateTotal" class="form-control" />
+                            </div>
+                            <div class="col-sm-12 col-md-1 text-center">
+                                <button type="button" class="btn btn-primary" @onclick="@(e=>Remove(receiptItem.Index))"
+                                title="Remove">
+                                    <i class="far fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    }
+                </section>
+                <section class="commands">
+                    <div class="row ">
+                        <div class="col-sm-12">
+                            <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <button type="button" class="btn btn-primary" @onclick="@(e=>Delete())" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </div>
     </EditForm>
 }
 
@@ -224,6 +228,8 @@ else
             Tags += ";" + tag;
         }
     }
+
+    private bool ShowFullPage = true;
 
     protected override async Task OnParametersSetAsync()
     {
