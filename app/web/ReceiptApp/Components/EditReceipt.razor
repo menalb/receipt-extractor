@@ -318,20 +318,6 @@ else
         }
     }
 
-    private async Task HandleRegister()
-    {
-        var newRceipt = new ReceiptDetails
-            {
-                Day = receiptDetails.Day,
-                Items = receiptDetails.Items,
-                Shop = receiptDetails.Shop,
-                Total = 1,
-                TotalVAT = 1
-            };
-
-        await Command.Register(newRceipt);
-    }
-
     private string PriceAlterCss()
     {
         return receiptDetails != null && RealTotal != receiptDetails.Total ? "text-warning" : "text-success";
