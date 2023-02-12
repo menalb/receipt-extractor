@@ -51,10 +51,9 @@ else
             <button type="submit" class="btn btn-primary" disabled="@isUpdating">Save</button>
         </p>
         <div class="receipt-container">
-            @if (ShowImage)
-            {
-                <ReceiptImage ReceiptId="@ReceiptId" />
-            }
+
+            <ReceiptImage ReceiptId="@ReceiptId" Visible="@ShowImage" />
+
             <section class="edit-form">
                 <DataAnnotationsValidator />
                 <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
