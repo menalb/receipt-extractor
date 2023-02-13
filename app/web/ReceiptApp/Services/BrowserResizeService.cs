@@ -4,7 +4,7 @@ namespace ReceiptApp.Services
 {
     public class BrowserResizeService
     {
-        public event EventHandler<ScreenSize> OnScreenResize;
+        public event EventHandler<ScreenSize>? OnScreenResize;
 
         private readonly IJSRuntime _js;
 

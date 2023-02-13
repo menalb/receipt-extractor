@@ -205,7 +205,7 @@ else
     }
 
     private bool isLoading = false;
-    private EditContext editContext;
+    private EditContext? editContext;
     private bool isUpdating = false;
 
     private decimal RealTotal = 0M;
@@ -301,7 +301,7 @@ else
 
     private async Task HandleSubmit()
     {
-        if (receiptDetails is not null && editContext.Validate())
+        if (receiptDetails is not null && editContext is not null && editContext.Validate())
         {
             isUpdating = true;
             receiptDetails.Day = Day.ToString(DateFormat);

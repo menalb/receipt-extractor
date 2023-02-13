@@ -172,7 +172,7 @@ else
     }
 
     private bool isLoading = false;
-    private EditContext editContext;
+    private EditContext? editContext;
     private bool isUpdating = false;
 
     private decimal RealTotal = 0M;
@@ -193,10 +193,13 @@ else
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         Day = DateTime.Now;
-        editContext = new(receiptDetails);
+        if (receiptDetails is not null)
+        {
+            editContext = new(receiptDetails);
+        }
     }
 
     private void UpdateTotal()
@@ -224,13 +227,13 @@ else
         if (ReceiptItems.Any())
         {
             maxIndex = ReceiptItems.Max(item => item.Index);
-        }        
+        }
         ReceiptItems = ReceiptItems.Append(new ReceiptItem(maxIndex + 1, new Model.ReceiptItem()));
     }
 
     private async Task HandleSubmit()
     {
-        if (receiptDetails is not null && editContext.Validate())
+        if (receiptDetails is not null && editContext is not null && editContext.Validate())
         {
             isUpdating = true;
             receiptDetails.Day = Day.ToString(DateFormat);
