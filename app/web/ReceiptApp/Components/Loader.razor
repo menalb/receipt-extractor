@@ -1,0 +1,17 @@
+﻿@if (Visible)
+{
+    <div class="text-center" role="alert" aria-busy="true">
+        <div class="lds-ellipsis" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
+        @if (ShowText)
+        {
+            <div>
+                <em>Loading @LoadingDetail ... </em>
+            </div>
+        }
+    </div>
+}
+@code {
+    [Parameter] public string LoadingDetail { get; set; } = "";
+    [Parameter] public bool ShowText { get; set; } = true;
+    [Parameter] public bool Visible { get; set; } = true;
+}

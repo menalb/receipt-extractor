@@ -19,7 +19,6 @@
 <h1 class="receipts-header">
     <span class="d-none d-sm-block"> Receipts</span>
 </h1>
-
 <div class="file-input-group input-group mb-2">
     <div class="custom-file">
         <ReceiptApp.Components.Dialogs.FileUploadDialog />
@@ -48,9 +47,10 @@
 </div>
 
 <hr />
+
 @if (receipts == null)
 {
-    <p class="loading"><em>Loading...</em></p>
+    <Loader LoadingDetail="Receipts" />
 }
 else
 {

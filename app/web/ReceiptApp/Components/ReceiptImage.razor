@@ -2,11 +2,11 @@
 @inject ImageService ImageService
 
 @if (Visible)
-{
-    <div class="text-center">
+{    
+    <div class="text-center">        
         @if (isLoading)
         {
-            <em>Loading image</em>
+            <Loader LoadingDetail="Image" />
         }
         else
         {
