@@ -39,16 +39,26 @@ else
                     Hide Image
                 </button>
             }
-            <button type="button" class="btn btn-primary btn-excel" title="Excel export" @onclick="@(e=>HandleExport())">
-                <i class="fas fa-file-excel"></i>
-            </button>
-            @if (isUpdating)
-            {
-                <span class="spinner-border text-info" role="status" title="Saving changes">
-                    <span class="sr-only">Saving changes</span>
-                </span>
-            }
-            <button type="submit" class="btn btn-primary" disabled="@isUpdating">Save</button>
+            <span class="top-commands">
+                <button type="button" class="btn btn-primary btn-excel" title="Excel export" @onclick="@(e=>HandleExport())">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i>
+                    <span class="sr-only">
+                        Export
+                    </span>
+                </button>
+                @if (isUpdating)
+                {
+                    <span class="spinner-border text-info" role="status" title="Saving changes">
+                        <span class="sr-only">Saving changes</span>
+                    </span>
+                }
+                <button type="submit" class="btn btn-primary" disabled="@isUpdating">
+                    <i class="fas fa-save" aria-hidden="true"></i>
+                    <span class="sr-only">
+                        Save
+                    </span>
+                </button>
+            </span>
         </p>
         <div class="receipt-container">
 
@@ -133,7 +143,15 @@ else
                     </div>
                 </section>
 
-                <h3>Items</h3>
+                <h3>
+                    <span>
+                        Items
+                    </span>
+                    <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </h3>
+
                 <section>
                     @foreach (var receiptItem in ReceiptItems)
                     {
@@ -152,28 +170,21 @@ else
                                 <InputNumber id="ItemPrice" @bind-Value="receiptItem.Item.Price" @bind-Value:format="F2"
                                      @onblur="UpdateTotal" class="form-control" />
                             </div>
-                            <div class="col-sm-12 col-md-1 text-center">
+                            <div class="col-sm-12 col-md-1 text-right">
                                 <button type="button" class="btn btn-primary" @onclick="@(e=>Remove(receiptItem.Index))"
                                 title="Remove">
                                     <i class="far fa-trash-alt"></i>
                                 </button>
                             </div>
                         </div>
-
                     }
                 </section>
+                <hr />
                 <section class="commands">
-                    <div class="row ">
+                    <div class="row text-center">
                         <div class="col-sm-12">
-                            <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <button type="button" class="btn btn-primary" @onclick="@(e=>Delete())" title="Delete">
-                                <i class="fas fa-trash-alt"></i>
+                            <button type="button" class="btn btn-primary" @onclick="@(e=>Delete())" title="Delete Receipt">
+                                <i class="fas fa-trash-alt" aria-hidden="true"></i> Delete Receipt
                             </button>
                         </div>
                     </div>
