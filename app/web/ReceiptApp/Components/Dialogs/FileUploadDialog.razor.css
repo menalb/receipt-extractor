@@ -1,3 +1,11 @@
 ﻿.loading {
     text-align: center;
 }
+
+.upload-button i {
+    padding-right: 0.5rem;
+}
+
+.upload-button {
+    cursor: pointer;
+}

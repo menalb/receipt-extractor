@@ -3,30 +3,54 @@
 @inject ReceiptLoaderStateService state
 @inject ImageService Uploader
 
-<button class="btn btn-primary" @onclick="()=> OpenDialog()">
-    <i class="fas fa-upload"></i>
+<button class="btn btn-primary" title="Add Receipt" @onclick="()=> OpenDialog()">
+    <i class="fas fa-plus" aria-hidden="true"></i>
 </button>
 
 @if (DialogIsOpen)
 {
-    <Dialog Caption="Upload Receipt"
+    <Dialog Caption="Add Receipt"
         OnClose="@OnDialogClose"
         Type="Dialog.Category.Okay">
-        <Body>            
-            <div>
-                <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
-                <label class="custom-file-label" for="inputGroupFile01">Upload Receipt</label>
-            </div>
-            @if (message != null)
-            {
-                <p class="loading">
-                    @message
+        <Body>
+            <div class="text-center">
+                <p>
+                    <InputFile disabled="@IsProcessing"
+                           aria-disabled="@IsProcessing"
+                           OnChange="@LoadFiles"
+                           class="custom-file-input"
+                           id="inputFile" />
+                    <label disabled="@IsProcessing"
+                       aria-disabled="@IsProcessing"
+                       title="Upload receipt file"
+                       for="inputFile"
+                       class="btn btn-primary upload-button @(IsProcessing ? "disabled" : "")"
+                       role="button">
+                        <i class="fas fa-upload" aria-hidden="true"></i>Upload Receipt
+                    </label>
                 </p>
-            }
-            @if (errorMessage != null)
-            {
-                <p class="error"><em>@errorMessage</em></p>
-            }
+                <p>
+                    OR
+                </p>
+                <p>
+                    <NavLink title="Add Receipt using the receipt form"
+                         class="btn btn-primary"
+                         href=@($"register-receipt")>
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        Manually fill out
+                    </NavLink>
+                </p>
+                @if (message != null)
+                {
+                    <p class="loading">
+                        @message
+                    </p>
+                }
+                @if (errorMessage != null)
+                {
+                    <p class="error"><em>@errorMessage</em></p>
+                }
+            </div>
         </Body>
     </Dialog>
 }
@@ -34,9 +58,11 @@
     private bool DialogIsOpen = false;
     private string message = "";
     public string errorMessage { get; set; } = "";
+    private bool IsProcessing = false;
 
     private void OpenDialog()
     {
+        IsProcessing = false;
         DialogIsOpen = true;
 
         ClearMessage();
@@ -54,7 +80,8 @@
 
     private void SetProcessing()
     {
-        message = "Processing receipt...";
+        IsProcessing = true;
+        message = "Uploading receipt...";
     }
 
     private void ClearMessage()
@@ -80,7 +107,8 @@
             await Task.Delay(3000);
 
             ClearMessage();
-            message = @"Your file has been uploaded and is now being processed. 
+            IsProcessing = false;
+            message = @"Your file has been uploaded and is now being processed.
             In the meantime, you can continue using the app.";
         }
         catch (Exception ex)

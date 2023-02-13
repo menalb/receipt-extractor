@@ -25,9 +25,6 @@
         <ReceiptApp.Components.Dialogs.FileUploadDialog />
     </div>
     <span class="header-actions">
-        <NavLink title="Add Receipt" class="btn btn-primary" href=@($"register-receipt")>
-            <i class="fas fa-plus"></i>
-        </NavLink>
         <button type="button" class="btn btn-primary" title="Refresh Receipts list" @onclick="@(e=>Refresh())">
             <i class="fas fa-sync-alt"></i>
         </button>
@@ -96,11 +93,11 @@ else
 
     private DateTime? MonthYear = null;
     private string? SelectedReceiptId = null;
-    private ScreenSize Size;    
+    private ScreenSize Size;
 
     protected override async Task OnInitializedAsync()
     {
-        state.OnLoadedReceiptChanged += async (component, receiptId) => await Refresh();        
+        state.OnLoadedReceiptChanged += async (component, receiptId) => await Refresh();
 
         ClearMessage();
         ClearErrorMessage();
