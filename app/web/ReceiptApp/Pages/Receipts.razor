@@ -191,7 +191,6 @@ else
         }
         else
         {
-            Console.WriteLine(id);
             NavManager.NavigateTo($"receipt/{id}");
         }
     }
@@ -213,7 +212,6 @@ else
 
     private void OnResize(ScreenSize size)
     {
-        Console.WriteLine(size);
         Size = size;
         StateHasChanged();
     }

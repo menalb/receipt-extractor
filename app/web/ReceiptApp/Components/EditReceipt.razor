@@ -26,7 +26,10 @@ else
                 title="Show receipt image"
                 @onclick="@HandleShowImage"
                 disabled="@isUpdating">
-                    Show Image
+                    <i class="fas fa-image" aria-hidden="true"></i>
+                    <span class="sr-only">
+                        Show Image
+                    </span>
                 </button>
             }
             else
@@ -36,7 +39,10 @@ else
                 title="Show receipt image"
                 @onclick="@HandleShowImage"
                 disabled="@isUpdating">
-                    Hide Image
+                    <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                    <span class="sr-only">
+                        Hide Image
+                    </span>
                 </button>
             }
             <span class="top-commands">
@@ -68,117 +74,8 @@ else
                 <DataAnnotationsValidator />
                 <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
 
-                <section>
-                    <div class="form-row">
-                        <label for="Tags" class="col-sm-2 col-form-label">Tags:</label>
-                        <div class="col-sm-10">
-                            <InputText id="Tags" @bind-Value="Tags" class="form-control" />
-                            @foreach (var tag in defaultTags)
-                            {
-                                <button type="button" class="btn btn-primary" @onclick="@(e=>SetTag(tag))" title="@tag">
-                                    <i class="@TagsService.GetKindIcon(tag)"></i>
-                                </button>
-                            }
-                        </div>
-                    </div>
+                <ReceiptFields ReceiptDetails="receiptDetails" />
 
-                    <div class="form-row">
-                        <label for="Day" class="col-sm-2 col-form-label">Day:</label>
-                        <div class="col-sm-10">
-                            <InputDate id="Day" @bind-Value="Day" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="Total" class="col-sm-2 col-form-label">Total:</label>
-                        <div class="col-sm-10">
-                            <InputNumber id="Total" @bind-Value="Total" @bind-Value:format="F2" @onblur="UpdateTotal"
-                                     class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <span class="col-sm-2">Real Total:</span>
-                        <span class="col-sm-10">
-                            <span class="@PriceAlterCss()">
-                                @RealTotal
-                            </span>
-                        </span>
-                    </div>
-
-                    <h3>Shop</h3>
-                    <div class="form-row">
-                        <label for="ShopName" class="col-sm-2 col-form-label">Name:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopName" @bind-Value="receiptDetails.Shop.Name" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="ShopOwner" class="col-sm-2 col-form-label">Owner:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopOwner" @bind-Value="receiptDetails.Shop.Owner" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="ShopAddress" class="col-sm-2 col-form-label">Address:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopAddress" @bind-Value="receiptDetails.Shop.Address" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="ShopCity" class="col-sm-2 col-form-label">City:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopCity" @bind-Value="receiptDetails.Shop.City" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="ShopPhone" class="col-sm-2 col-form-label">Phone:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopPhone" @bind-Value="receiptDetails.Shop.Phone" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label for="ShopVat" class="col-sm-2 col-form-label">VAT:</label>
-                        <div class="col-sm-10">
-                            <InputText id="ShopVat" @bind-Value="receiptDetails.Shop.VAT" class="form-control" />
-                        </div>
-                    </div>
-                </section>
-
-                <h3>
-                    <span>
-                        Items
-                    </span>
-                    <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </h3>
-
-                <section>
-                    @foreach (var receiptItem in ReceiptItems)
-                    {
-                        <div class="form-row receipt-items">
-                            <label for="ItemName" class="col-sm-1 col-form-label">Name:</label>
-                            <div class="col-sm-4">
-                                <InputText id="ItemName" @bind-Value="receiptItem.Item.Name" class="form-control" />
-                            </div>
-                            <label for="ItemVat" class="col-sm-1 col-form-label">VAT:</label>
-                            <div class="col-sm-2">
-                                <InputNumber id="ItemVat" @bind-Value="receiptItem.Item.VAT" @bind-Value:format="F2"
-                                     class="form-control" />
-                            </div>
-                            <label for="ItemPrice" class="col-sm-1 col-form-label">Price:</label>
-                            <div class="col-sm-2">
-                                <InputNumber id="ItemPrice" @bind-Value="receiptItem.Item.Price" @bind-Value:format="F2"
-                                     @onblur="UpdateTotal" class="form-control" />
-                            </div>
-                            <div class="col-sm-12 col-md-1 text-right">
-                                <button type="button" class="btn btn-primary" @onclick="@(e=>Remove(receiptItem.Index))"
-                                title="Remove">
-                                    <i class="far fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                    }
-                </section>
                 <hr />
                 <section class="commands">
                     <div class="row text-center">
@@ -199,45 +96,13 @@ else
     [Parameter]
     public string ReceiptId { get; set; } = "";
     private ReceiptDetails? receiptDetails;
-    private DateTime Day { get; set; } = DateTime.Now;
-    private string[] defaultTags = new string[] { "shop", "bar", "pharmacy" };
-
-    private string Tags { get; set; } = "";
-    private decimal Total
-    {
-        get => receiptDetails is not null && receiptDetails.Total.HasValue ? receiptDetails.Total.Value : 0M;
-        set
-        {
-            if (receiptDetails is not null)
-            {
-                receiptDetails.Total = value;
-            }
-        }
-    }
 
     private bool isLoading = false;
     private EditContext? editContext;
     private bool isUpdating = false;
 
-    private decimal RealTotal = 0M;
-
-    private const string DateFormat = "yyyy-MM-dd";
-
-    private IEnumerable<ReceiptItem> ReceiptItems = new List<ReceiptItem>();
 
     private bool ShowImage = false;
-
-    private void SetTag(string tag)
-    {
-        if (string.IsNullOrWhiteSpace(Tags))
-        {
-            Tags = tag;
-        }
-        else
-        {
-            Tags += ";" + tag;
-        }
-    }
 
     private bool ShowFullPage = true;
 
@@ -252,28 +117,11 @@ else
 
         isLoading = true;
         receiptDetails = await Query.GetReceipt(ReceiptId);
-
         if (receiptDetails is not null)
         {
-            CultureInfo provider = CultureInfo.InvariantCulture;
-            if (!string.IsNullOrEmpty(receiptDetails.Day))
-            {
-                Day = DateTime.ParseExact(receiptDetails.Day, DateFormat, provider);
-            }
-            Tags = receiptDetails.Tags != null ? string.Join(";", receiptDetails.Tags).ToLowerInvariant() : string.Empty;
             editContext = new(receiptDetails);
-            ReceiptItems = receiptDetails.Items is not null ?
-            receiptDetails.Items.Select((item, index) => new ReceiptItem(index, item)) :
-            new List<ReceiptItem>();
-
-            UpdateTotal();
         }
         isLoading = false;
-    }
-
-    private void UpdateTotal()
-    {
-        RealTotal = ReceiptItems.Sum(ri => ri.Item.Price);
     }
 
     private async Task Delete()
@@ -283,12 +131,6 @@ else
             await Command.Delete(receiptDetails.Id);
             NavManager.NavigateTo("/receipts");
         }
-    }
-
-    private void Remove(int receiptItemIndex)
-    {
-        ReceiptItems = ReceiptItems.Where(item => item.Index != receiptItemIndex);
-        UpdateTotal();
     }
 
     private void HandleShowImage()
@@ -304,22 +146,14 @@ else
         }
     }
 
-    private void AppendEmpty()
-    {
-        var maxIndex = ReceiptItems.Max(item => item.Index);
-        ReceiptItems = ReceiptItems.Append(new ReceiptItem(maxIndex + 1, new Model.ReceiptItem()));
-    }
-
     private async Task HandleSubmit()
     {
         if (receiptDetails is not null && editContext is not null && editContext.Validate())
         {
             isUpdating = true;
-            receiptDetails.Day = Day.ToString(DateFormat);
-            receiptDetails.Items = ReceiptItems.Select(receiptItem => receiptItem.Item);
-            receiptDetails.Tags = string.IsNullOrEmpty(Tags) ? new List<string>() : Tags.Split(";");
+
             await Command.Save(ReceiptId, receiptDetails);
-            UpdateTotal();
+
             isUpdating = false;
         }
         else
@@ -327,10 +161,4 @@ else
 
         }
     }
-
-    private string PriceAlterCss()
-    {
-        return receiptDetails != null && RealTotal != receiptDetails.Total ? "text-warning" : "text-success";
-    }
-    public record ReceiptItem(int Index, Model.ReceiptItem Item);
 }

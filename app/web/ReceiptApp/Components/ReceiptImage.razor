@@ -31,7 +31,15 @@
     private bool isLoading = false;
     private string Message = "";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(ImageUrl) && Visible)
+        {
+            await LoadImageUrl();
+        }
+    }
+
+    private async Task LoadImageUrl()
     {
         isLoading = true;
         ImageUrl = await ImageService.GetImageURL(ReceiptId);

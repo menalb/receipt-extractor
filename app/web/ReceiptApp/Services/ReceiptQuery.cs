@@ -1,4 +1,5 @@
-﻿using ReceiptApp.Model;
+﻿using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using ReceiptApp.Model;
 
 namespace ReceiptApp.Services
 {
@@ -8,10 +9,10 @@ namespace ReceiptApp.Services
         private readonly ReceiptApi _api;
 
         private readonly bool _useMockedReceipts = false;
-        public ReceiptQuery(ReceiptApi api)
+        public ReceiptQuery(ReceiptApi api, IWebAssemblyHostEnvironment env)
         {
             _api = api;
-            _useMockedReceipts = true;
+            _useMockedReceipts = env.IsDevelopment();
         }
 
         public async Task<IEnumerable<ReceiptSummary>> GetAll(DateTime? from = null)
@@ -36,37 +37,36 @@ namespace ReceiptApp.Services
 
         public async Task<ReceiptDetails?> GetReceipt(string receiptId)
         {
-            // var mocked = new ReceiptDetails
-            // {
-            //     Day = "11/21/2021",
-            //     Id = "35ea0471-f2d8-467d-860e-e353dad2b522",
-            //     Shop = new Shop
-            //     {
-            //         Name = "CIN CIN SNC",
-            //         Owner = "CIN CIN SNC",
-            //         Address = "VIA EMILIA 52",
-            //         VAT = "02865321208",
-            //         City = "SAN LAZZARO DI SAVENA"
-            //     },
-            //     Items = new List<ReceiptItem>
-            //     {
-            //         new ReceiptItem{
-            //             Name="TE' / CAPPUCCINO 10%",
-            //             VAT=10,
-            //             Price=1.40M
-            //         },
-            //         new ReceiptItem{
-            //             Name="PASTA 10%",
-            //             VAT=10,
-            //             Price=1.10M
-            //         }
-            //     },
-            //     Total = 2.50M
-            // };
+            if (_useMockedReceipts)
+            {               
+                await Task.Delay(1000);
+				return mockedReceipt1.Receipt;
+            }
 
-            // return await Task.FromResult<ReceiptDetails>(mocked);
             return (await _api.Get<ReceiptDetailsResult>($"{receipts_url}/receipt/{receiptId}"))?.Receipt ?? null;
         }
+
+		private ReceiptDetailsResult mockedReceipt1 = new ReceiptDetailsResult 
+		{
+			Receipt= new ReceiptDetails { Id= "034b8e7a-a1de-4745-91ee-77abea3dcae6" ,
+			Day= "2023-01-25",
+			Tags=new string[] { "bar" },
+			Shop= new Shop 
+			{
+				Name= "VEGETA CAFE BISTROT",
+                Owner= "DD.AA.LL. SRLS",
+				Address= "Via Emilia 43/F",
+				City= "San Lazzaro di Savena"
+            },
+			Items= new List<ReceiptItem> { new ReceiptItem 
+			{
+				Name="COMBO CAPPUCCIO",
+				Price=2.7M,
+				VAT=0
+			} }
+            }
+		};
+		
 
         private string mockedList = @"{
 	""Receipts"": [

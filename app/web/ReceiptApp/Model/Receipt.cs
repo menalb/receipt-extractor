@@ -72,5 +72,5 @@ namespace ReceiptApp.Model
         public IEnumerable<string>? Tags { get; set; }
     }
 
-    public record ReceiptListItem(string id, string JobId, DateTime day, IEnumerable<string> tags, string shop, decimal total);
+    public record ReceiptListItem(string id, string JobId, DateTime day, IEnumerable<string> tags, string shop, decimal total);    
 }
