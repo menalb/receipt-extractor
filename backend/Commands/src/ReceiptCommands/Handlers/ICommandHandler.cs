@@ -2,7 +2,7 @@
 
 namespace ReceiptCommands.Handlers;
 
-public interface ICommandHandler<TCommand>
+public interface ICommandHandler<TCommand,TResponse>
 {
-    Task Handle(string userId, TCommand command);
+    Task<TResponse> Handle(string userId, TCommand command);
 }

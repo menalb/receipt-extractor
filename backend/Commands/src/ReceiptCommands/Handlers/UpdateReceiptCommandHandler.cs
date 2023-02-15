@@ -18,7 +18,7 @@ public class UpdateReceiptCommand
     public string ReceiptId { get; }
     public ReceiptDetails ReceiptDetails { get; }
 }
-public class UpdateReceiptCommandHandler : ICommandHandler<UpdateReceiptCommand>
+public class UpdateReceiptCommandHandler : ICommandHandler<UpdateReceiptCommand, string>
 {
     private readonly IAmazonDynamoDB _dynamoDBClient;
 
@@ -27,7 +27,7 @@ public class UpdateReceiptCommandHandler : ICommandHandler<UpdateReceiptCommand>
         _dynamoDBClient = db;
     }
 
-    public async Task Handle(string userId, UpdateReceiptCommand command)
+    public async Task<string> Handle(string userId, UpdateReceiptCommand command)
     {
         string receiptId = command.ReceiptId;
         ReceiptDetails receipt = command.ReceiptDetails;
@@ -70,5 +70,7 @@ public class UpdateReceiptCommandHandler : ICommandHandler<UpdateReceiptCommand>
         };
 
         await ctx.SaveAsync(updateReceipt);
+
+        return receiptId;
     }
 }

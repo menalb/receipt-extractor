@@ -17,7 +17,7 @@ namespace ReceiptCommands.Handlers
         public ReceiptDetails ReceiptDetails { get; }
     }
 
-    internal class RegisterReceiptCommandHandler : ICommandHandler<RegisterReceiptCommand>
+    internal class RegisterReceiptCommandHandler : ICommandHandler<RegisterReceiptCommand, string>
     {
         private readonly IAmazonDynamoDB _dynamoDBClient;
 
@@ -26,7 +26,7 @@ namespace ReceiptCommands.Handlers
             _dynamoDBClient = dynamoDBClient;
         }
 
-        public async Task Handle(string userId, RegisterReceiptCommand command)
+        public async Task<string> Handle(string userId, RegisterReceiptCommand command)
         {
             var receiptId = Guid.NewGuid().ToString();
             ReceiptDetails receipt = command.ReceiptDetails;
@@ -69,6 +69,8 @@ namespace ReceiptCommands.Handlers
             };
 
             await ctx.SaveAsync(updateReceipt);
+
+            return receiptId;
         }
     }
 }

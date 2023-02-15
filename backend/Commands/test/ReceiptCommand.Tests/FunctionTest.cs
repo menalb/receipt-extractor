@@ -82,25 +82,27 @@ namespace ReceiptCommand.Tests
         }
     }
 
-    public class FakeUpdateCommandHandler : ICommandHandler<UpdateReceiptCommand>
+    public class FakeUpdateCommandHandler : ICommandHandler<UpdateReceiptCommand,string>
     {
         public List<string> UpdatedReceiptIds { get; } = new List<string>();
 
-        public Task Handle(string userId, UpdateReceiptCommand command)
+        public async Task<string> Handle(string userId, UpdateReceiptCommand command)
         {
             UpdatedReceiptIds.Add(command.ReceiptId);
-            return Task.CompletedTask;
+            await Task.CompletedTask;
+            return "";
         }
     }
 
-    public class FakeRegisterCommandHandler : ICommandHandler<RegisterReceiptCommand>
+    public class FakeRegisterCommandHandler : ICommandHandler<RegisterReceiptCommand,string>
     {
         public List<string> RegisteredReceiptIds { get; } = new List<string>();
 
-        public Task Handle(string userId, RegisterReceiptCommand command)
+        public async Task<string> Handle(string userId, RegisterReceiptCommand command)
         {
             RegisteredReceiptIds.Add(Guid.NewGuid().ToString());
-            return Task.CompletedTask;
+            await Task.CompletedTask;
+            return "";
         }
     }
 
@@ -129,8 +131,8 @@ namespace ReceiptCommand.Tests
         }
 
         [Fact]
-        public async Task When_The_User_In_Authorized_And_The_Receipt_Data_Are_Valid_It_Returns_Performs_The_Updates()
-        {            
+        public async Task When_The_Day_Is_Missing_It_Returns_BadRequest()
+        {
             var request = new APIGatewayProxyRequest
             {
                 RequestContext = new APIGatewayProxyRequest.ProxyRequestContext
@@ -146,9 +148,30 @@ namespace ReceiptCommand.Tests
 
             var response = await _functions.Post(request, context);
 
+            Assert.Equal((int)HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task When_The_User_In_Authorized_And_The_Receipt_Data_Are_Valid_It_Returns_Performs_The_Updates()
+        {            
+            var request = new APIGatewayProxyRequest
+            {
+                RequestContext = new APIGatewayProxyRequest.ProxyRequestContext
+                {
+                    Authorizer = new APIGatewayCustomAuthorizerContext
+                    {
+                        Claims = new Dictionary<string, string> { { "sub", "user_sub" } }
+                    }
+                },
+                Body = System.Text.Json.JsonSerializer.Serialize(new ReceiptDetails { Day = "2023-01-01"})
+            };
+            var context = new TestLambdaContext();
+
+            var response = await _functions.Post(request, context);
+
             Assert.NotEmpty(_registerCommandHandler.RegisteredReceiptIds);
             Assert.Equal((int)HttpStatusCode.OK, response.StatusCode);
-        }
+        }       
     }
 
 }

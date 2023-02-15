@@ -15,8 +15,8 @@ namespace ReceiptCommands;
 
 public class Functions
 {
-    private readonly ICommandHandler<UpdateReceiptCommand> _updateCommadHandler;
-    private readonly ICommandHandler<RegisterReceiptCommand> _registerCommadHandler;
+    private readonly ICommandHandler<UpdateReceiptCommand, string> _updateCommadHandler;
+    private readonly ICommandHandler<RegisterReceiptCommand, string> _registerCommadHandler;
 
     /// <summary>
     /// Default constructor that Lambda will invoke.
@@ -28,8 +28,8 @@ public class Functions
     }
 
     public Functions(
-        ICommandHandler<UpdateReceiptCommand> updateCommadHandler,
-        ICommandHandler<RegisterReceiptCommand> registerCommadHandler
+        ICommandHandler<UpdateReceiptCommand, string> updateCommadHandler,
+        ICommandHandler<RegisterReceiptCommand, string> registerCommadHandler
         )
     {
         _updateCommadHandler = updateCommadHandler;
@@ -78,12 +78,16 @@ public class Functions
 
         (bool isValid, ParsedPostRequest parsed) = ParsePostRequest(request);
 
+        context.Logger.LogLine("is valid: " + isValid);
+
         if (!isValid)
         {
             return BadRequest;
         }
+        
+        var id = await _registerCommadHandler.Handle(parsed.userId, parsed.command);
 
-        await _registerCommadHandler.Handle(parsed.userId, parsed.command);
+        context.Logger.LogLine("id: " + id);
 
         return OK;
     }
@@ -124,6 +128,11 @@ public class Functions
         var userId = request.RequestContext.Authorizer.Claims["sub"];
 
         var receipt = System.Text.Json.JsonSerializer.Deserialize<ReceiptDetails>(request.Body);
+
+        if (string.IsNullOrEmpty(receipt.Day))
+        {
+            return (false, null);
+        }
 
         return (
             receipt is not null,
