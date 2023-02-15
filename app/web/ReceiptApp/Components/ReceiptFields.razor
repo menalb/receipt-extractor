@@ -132,7 +132,6 @@
         }
     }
 
-    private const string DateFormat = "yyyy-MM-dd";
     private decimal RealTotal = 0M;
     private IEnumerable<ReceiptItem> ReceiptItems = new List<ReceiptItem>();
 
@@ -162,7 +161,11 @@
             CultureInfo provider = CultureInfo.InvariantCulture;
             if (!string.IsNullOrEmpty(ReceiptDetails.Day))
             {
-                Day = DateTime.ParseExact(ReceiptDetails.Day, DateFormat, provider);
+                Day = DateTimeHelper.Parse(ReceiptDetails.Day);
+            }
+            else
+            {
+                Day = DateTime.Now;
             }
             Tags = ReceiptDetails.Tags != null ? string.Join(";", ReceiptDetails.Tags).ToLowerInvariant() : string.Empty;
 
@@ -181,7 +184,7 @@
 
     private void UpdateDay()
     {
-        ReceiptDetails.Day = Day.ToString(DateFormat);
+        ReceiptDetails.Day = DateTimeHelper.DateToStringy(Day);
     }
 
     private void UpdateTotal()

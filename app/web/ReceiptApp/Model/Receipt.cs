@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace ReceiptApp.Model
@@ -14,6 +15,7 @@ namespace ReceiptApp.Model
         public string Id { get; set; } = "";
         [JsonPropertyName("job_id")]
         public string? JobId { get; set; }
+        [Required]
         [JsonPropertyName("day")]
         public string? Day { get; set; }
         [JsonPropertyName("shop")]

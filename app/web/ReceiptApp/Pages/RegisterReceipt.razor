@@ -35,21 +35,22 @@ else
         <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
 
         <ReceiptFields ReceiptDetails="receiptDetails" />
-        
+
     </EditForm>
 }
 
 @code {
     private ReceiptDetails? receiptDetails = new ReceiptDetails
         {
+            Day = DateTimeHelper.GetToday(),
             Shop = new Shop(),
             Items = new List<Model.ReceiptItem>()
-        };    
+        };
 
     private bool isLoading = false;
     private EditContext? editContext;
     private bool isUpdating = false;
-    
+
     protected override void OnInitialized()
     {
         if (receiptDetails is not null)
@@ -71,9 +72,9 @@ else
         if (receiptDetails is not null && editContext is not null && editContext.Validate())
         {
             isUpdating = true;
-            
+
             await Command.Register(receiptDetails);
-            
+
             isUpdating = false;
         }
         else
