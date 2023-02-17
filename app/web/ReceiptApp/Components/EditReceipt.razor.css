@@ -3,6 +3,10 @@
     right: 1rem;
 }
 
+.commands {
+    margin-bottom: 1rem;
+}
+
 @media (max-width: 640.98px) {
     .top-commands {
         position: fixed;

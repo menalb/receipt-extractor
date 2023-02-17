@@ -1,0 +1,46 @@
+﻿@using ReceiptApp.Components;
+@using ReceiptApp.Services;
+@inject ReceiptLoaderStateService state
+@inject ImageService Uploader
+
+<button type="button" class="btn btn-danger" @onclick="@(e=>OpenDialog())" title="Delete Receipt">
+    <i class="fas fa-trash-alt" aria-hidden="true"></i> Delete Receipt
+</button>
+
+@if (DialogIsOpen)
+{
+    <Dialog Caption="Add Receipt"
+        OnClose="@OnDialogClose"
+        Type="Dialog.Category.DeleteNot">
+        <Body>
+            <p class="text-center">
+               Confirm delete receipt               
+            </p>
+        </Body>
+    </Dialog>
+}
+@code {
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool DialogIsOpen = false;    
+
+    private void OpenDialog()
+    {        
+        DialogIsOpen = true;
+    }
+
+    private void OnDialogClose(bool isOk)
+    {
+        if (isOk)
+        {
+            OnConfirm.InvokeAsync();
+        }
+        else
+        {
+            OnCancel.InvokeAsync();
+        }
+        DialogIsOpen = false;
+    }
+}

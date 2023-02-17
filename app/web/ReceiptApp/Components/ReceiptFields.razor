@@ -81,15 +81,13 @@
     <span>
         Items
     </span>
-    <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
-        <i class="fas fa-plus"></i>
-    </button>
 </h3>
 <section>
     @foreach (var receiptItem in ReceiptItems)
     {
-        <div class="form-row receipt-items">            
+        <div class="form-row receipt-items">
             <div class="col-sm-4">
+                <label for="ItemName" class="sr-only">Item name</label>
                 <InputText id="ItemName" @bind-Value="receiptItem.Item.Name" class="form-control" />
             </div>
             <label for="ItemVat" class="col-sm-1 col-form-label">VAT:</label>
@@ -105,12 +103,18 @@
             <div class="col-sm-12 col-md-1 text-center">
                 <button type="button" class="btn btn-primary" @onclick="@(e=>Remove(receiptItem.Index))"
                     title="Remove">
-                    <i class="far fa-trash-alt"></i>
+                    <i class="far fa-trash-alt" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
-
+        <hr />
     }
+    <p class="bottom-commands">
+        <button type="button" class="btn btn-primary" @onclick="@(e=>AppendEmpty())" title="Add Receipt Item">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            <span>Add Item</span>
+        </button>
+    </p>
 </section>
 
 @code {

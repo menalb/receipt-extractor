@@ -3,3 +3,8 @@
     justify-content: space-between;
     padding-top: 1rem;
 }
+
+.bottom-commands {
+    display: flex;
+    justify-content: end;
+}
