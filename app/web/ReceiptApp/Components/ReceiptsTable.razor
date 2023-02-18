@@ -43,7 +43,7 @@
     <tbody>
         @foreach (var receipt in Receipts)
         {
-            <tr @onclick="()=>SelectReceipt(receipt)">
+            <tr class="clickable" @onclick="()=>SelectReceipt(receipt)">
                 <td>@receipt.day.ToShortDateString()</td>
                 <td title="@BuildShopTitle(receipt)">
                     <i aria-hidden="true" class="@TagsService.GetKindIcon(receipt.tags)"></i>
