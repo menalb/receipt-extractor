@@ -41,8 +41,15 @@
 }
 
 <div class="mb-2">
-    <input id="monthFilter" alt="Filter by month" type="month"
+   @* <input id="monthFilter" alt="Filter by month" type="month"
+        value="@MonthFilter"
            @oninput="@(e=>FilterByMonth(e.Value?.ToString() ?? string.Empty))" class="form-control col-xs-8 col-sm-4"
+           placeholder="Select month" />*@
+
+
+    <input id="monthFilter" value="@(MonthFilter.ToString("yyyy-MM"))" alt="Filter by month" type="month"
+           class="form-control col-xs-8 col-sm-4"
+           @oninput="@(e=>FilterByMonth(e.Value?.ToString() ?? string.Empty))"
            placeholder="Select month" />
 </div>
 
@@ -82,7 +89,7 @@ else
 }
 
 @code {
-    public string MonthFilter { get; set; } = "";
+    private DateTime MonthFilter = DateTime.Now.AddDays(-30);
     public string? loadingMessage { get; set; }
     public string errorMessage { get; set; } = "";
     private IEnumerable<ReceiptListItem> all_receipts = new List<ReceiptListItem>();
@@ -90,8 +97,7 @@ else
 
     private IEnumerable<ReceiptListItem> tableReceipts = new List<ReceiptListItem>();
     private DateTime? selectedDay;
-
-    private DateTime? MonthYear = null;
+    
     private string? SelectedReceiptId = null;
     private ScreenSize Size;
 
@@ -121,7 +127,7 @@ else
     {
         CultureInfo provider = CultureInfo.InvariantCulture;
 
-        all_receipts = (await Query.GetAll(MonthYear))
+        all_receipts = (await Query.GetAll(MonthFilter))
         .Select(r => new ReceiptListItem(
         r.Id ?? "",
         r.JobId ?? "",
@@ -145,18 +151,15 @@ else
     {
         loadingMessage = string.Empty;
         if (!string.IsNullOrWhiteSpace(month))
-        {
-            MonthFilter = month;
+        {             
             if (DateTime.TryParse(month, out DateTime monthYear))
-            {
-                MonthYear = monthYear;
+            {                
+                MonthFilter= monthYear;
                 await Refresh();
             }
         }
         else
         {
-            MonthFilter = string.Empty;
-
             UpdatePageData();
         }
     }
@@ -220,5 +223,5 @@ else
     {
         state.OnLoadedReceiptChanged -= async (component, receiptId) => await Refresh();
         BrowserResize.OnScreenResize -= (c, s) => OnResize(s);
-    }
+    }    
 }
