@@ -15,33 +15,37 @@
         <Body>
             <div class="text-center">
                 <p>
-                    <InputFile disabled="@IsProcessing"
-                           aria-disabled="@IsProcessing"
+                    <InputFile disabled="@IsUploading"
+                           aria-disabled="@IsUploading"
                            OnChange="@LoadFiles"
                            class="custom-file-input"
                            id="inputFile" />
-                    <label disabled="@IsProcessing"
-                       aria-disabled="@IsProcessing"
+                    <label disabled="@IsUploading"
+                       aria-disabled="@IsUploading"
                        title="Upload receipt file"
                        for="inputFile"
-                       class="btn btn-primary upload-button @(IsProcessing ? "disabled" : "")"
+                       class="btn btn-primary upload-button @(IsUploading ? "disabled" : "")"
                        role="button">
                         <i class="fas fa-upload" aria-hidden="true"></i>Upload Receipt
                     </label>
                 </p>
-                <p>
-                    OR
-                </p>
-                <p>
-                    <NavLink title="Add Receipt using the receipt form"
+                @if (!IsUploading)
+                {
+                    <p>
+                        OR
+                    </p>
+                    <p>
+                        <NavLink title="Add Receipt using the receipt form"
                          class="btn btn-primary"
                          href=@($"register-receipt")>
-                        <i class="fas fa-plus" aria-hidden="true"></i>
-                        Manually fill out
-                    </NavLink>
-                </p>
-                @if (message != null)
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                            Manually fill out
+                        </NavLink>
+                    </p>
+                }
+                @if (IsUploading)
                 {
+                    <Loader ShowText="false" />
                     <p class="loading">
                         @message
                     </p>
@@ -57,12 +61,12 @@
 @code {
     private bool DialogIsOpen = false;
     private string message = "";
+    private bool IsUploading = false;
     public string errorMessage { get; set; } = "";
-    private bool IsProcessing = false;
 
     private void OpenDialog()
     {
-        IsProcessing = false;
+        IsUploading = false;
         DialogIsOpen = true;
 
         ClearMessage();
@@ -78,9 +82,9 @@
         DialogIsOpen = false;
     }
 
-    private void SetProcessing()
+    private void SetUploading()
     {
-        IsProcessing = true;
+        IsUploading = true;
         message = "Uploading receipt...";
     }
 
@@ -97,7 +101,7 @@
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {
         ClearErrorMessage();
-        SetProcessing();
+        SetUploading();
 
         try
         {
@@ -107,7 +111,7 @@
             await Task.Delay(3000);
 
             ClearMessage();
-            IsProcessing = false;
+            IsUploading = false;
             message = @"Your file has been uploaded and is now being processed.
             In the meantime, you can continue using the app.";
         }
