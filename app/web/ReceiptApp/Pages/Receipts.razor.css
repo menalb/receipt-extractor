@@ -18,5 +18,24 @@
 }
 
 .edit-receipt-content {
-    padding: 2rem 1rem 1rem 1rem;    
+    padding: 2rem 1rem 1rem 1rem;
+}
+
+.commands {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 640.98px) {
+    .commands {
+        position: fixed;
+        justify-content: space-between;
+        z-index: 99;
+        width: 100%;
+        bottom: -0.5rem;
+        background-color: black;
+        margin-left: -1.5rem;
+        margin-bottom: 0;
+        padding: 0.5rem;
+    }
 }
