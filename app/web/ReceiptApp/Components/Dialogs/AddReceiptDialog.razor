@@ -46,6 +46,9 @@
                 @if (IsUploading)
                 {
                     <Loader ShowText="false" />
+                }
+                @if (!string.IsNullOrEmpty(message))
+                {
                     <p class="loading">
                         @message
                     </p>
