@@ -7,8 +7,14 @@
 
 @if (webSocket.State == WebSocketState.Open && ShowLog)
 {
-    <NavLink title="Go to receipt" class="nav-link" href=@($"receipt/{ReceiptId}")>
-        Loaded receipt, click here to edit.
+    <NavLink title="Receipt processed. Go to receipt"
+         role="alert"
+         aria-atomic="true"
+         aria-live="polite"
+         class="nav-link"
+         href=@($"receipt/{ReceiptId}")>
+        <i class="fas fa-bell" aria-hidden="true"></i>
+        Receipt processed!
     </NavLink>
 }
 
@@ -28,7 +34,7 @@
     }
 
     private async Task LoadingReceiptChanged(ComponentBase component, string fileName)
-    {        
+    {
         if (webSocket == null || webSocket.State != WebSocketState.Open)
         {
             Console.WriteLine("Connecting");
