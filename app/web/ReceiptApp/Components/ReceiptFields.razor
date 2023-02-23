@@ -27,14 +27,23 @@
         </div>
     </div>
     <div class="form-row">
-        <label for="Total" class="col-sm-2 col-form-label">Total:</label>
+        <label for="Total" class="col-sm-2 col-xs-12 col-form-label">
+            Total
+            <span class="d-inline d-sm-none">
+                (
+                <span class="@PriceAlterCss()" title="Tital Items">
+                    @RealTotal
+                </span>
+                )
+            </span>:
+        </label>
         <div class="col-sm-10">
             <InputNumber id="Total" @bind-Value="Total" @bind-Value:format="F2" @onblur="UpdateTotal"
                          class="form-control" />
         </div>
     </div>
-    <div class="form-row">
-        <span class="col-sm-2">Real Total:</span>
+    <div class="form-row d-none d-sm-inline">
+        <span class="col-sm-2">Total Items:</span>
         <span class="col-sm-10">
             <span class="@PriceAlterCss()">
                 @RealTotal
