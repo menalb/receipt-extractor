@@ -49,7 +49,7 @@ public class Functions
         {
             return MethodNotAllowed;
         }
-
+        
         (bool isValid, ParsedPutRequest parsed) = ParsePutRequest(request);
 
         if (!isValid)
