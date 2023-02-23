@@ -17,36 +17,43 @@
 }
 else
 {
-    <EditForm EditContext="@editContext" class="" OnSubmit="@HandleSubmit">
+    <EditForm EditContext="@editContext" OnSubmit="@HandleSubmit">
 
-        <p class="commands">
-            @if (!ShowImage)
-            {
-                <button type="button"
-                class="btn btn-primary"
-                title="Show receipt image"
-                @onclick="@HandleShowImage"
-                disabled="@isUpdating">
-                    <i class="fas fa-image" aria-hidden="true"></i>
-                    <span class="sr-only">
-                        Show Image
-                    </span>
-                </button>
-            }
-            else
-            {
-                <button type="button"
-                class="btn btn-primary"
-                title="Show receipt image"
-                @onclick="@HandleShowImage"
-                disabled="@isUpdating">
-                    <i class="fas fa-eye-slash" aria-hidden="true"></i>
-                    <span class="sr-only">
-                        Hide Image
-                    </span>
-                </button>
-            }
-            <span class="top-commands">
+        <div class="position-relative">
+            <p class="top-commands">
+                @if (!ShowImage)
+                {
+                    <button type="button"
+                    class="btn btn-primary"
+                    title="Show receipt image"
+                    @onclick="@HandleShowImage"
+                    disabled="@isUpdating">
+                        <i class="fas fa-image" aria-hidden="true"></i>
+                        <span class="sr-only">
+                            Show Image
+                        </span>
+                    </button>
+                }
+                else
+                {
+                    <button type="button"
+                    class="btn btn-primary"
+                    title="Show receipt image"
+                    @onclick="@HandleShowImage"
+                    disabled="@isUpdating">
+                        <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                        <span class="sr-only">
+                            Hide Image
+                        </span>
+                    </button>
+                }
+            </p>
+            <p class="commands">
+
+                <span class="d-block d-sm-none">
+                    <DeleteReceiptDialogButton OnConfirm="@Delete" DialogLabel=false />
+                </span>
+
                 <button type="button" class="btn btn-primary btn-excel" title="Excel export" @onclick="@(e=>HandleExport())">
                     <i class="fas fa-file-excel" aria-hidden="true"></i>
                     <span class="sr-only">
@@ -65,8 +72,8 @@ else
                         Save
                     </span>
                 </button>
-            </span>
-        </p>
+            </p>
+        </div>
         <div class="receipt-container">
 
             <ReceiptImage ReceiptId="@ReceiptId" Visible="@ShowImage" />
@@ -78,7 +85,7 @@ else
                 <ReceiptFields ReceiptDetails="receiptDetails" />
 
                 <hr />
-                <section class="commands">
+                <section class="bottom-commands d-none d-sm-block">
                     <div class="row text-center">
                         <div class="col-sm-12">
                             <DeleteReceiptDialogButton OnConfirm="@Delete" />

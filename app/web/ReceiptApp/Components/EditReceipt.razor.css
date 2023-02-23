@@ -1,16 +1,27 @@
-﻿.top-commands {
-    position: absolute;
-    right: 1rem;
-}
-
-.commands {
+﻿
+.top-commands {
     margin-bottom: 1rem;
 }
 
+.bottom-commands {
+    margin-bottom: 1rem;
+}
+
+.commands {
+    padding-bottom: 1rem;
+}
+
+@media (min-width: 641px) {
+    .commands {
+        position: absolute;
+        top: 0;
+        justify-content: flex-end;
+        width: 100%;
+    }
+}
+
 @media (max-width: 640.98px) {
-    .top-commands {
-        position: fixed;
-        right: 1rem;
-        z-index: 99;
+    .edit-form {
+        margin-bottom: 3rem;
     }
 }

@@ -150,3 +150,24 @@ a,
     color: var(--primary-color);
     cursor: pointer;
 }
+
+
+.commands {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 1rem;
+}
+
+@media (max-width: 640.98px) {
+    .commands {
+        position: fixed;
+        justify-content: space-between;
+        z-index: 99;
+        width: 100%;
+        bottom: -0.5rem;
+        background-color: black;
+        margin-left: -1.5rem;
+        margin-bottom: 0;
+        padding: 0.5rem;
+    }
+}

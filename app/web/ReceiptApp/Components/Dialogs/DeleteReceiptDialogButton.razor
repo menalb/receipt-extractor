@@ -4,17 +4,21 @@
 @inject ImageService Uploader
 
 <button type="button" class="btn btn-danger" @onclick="@(e=>OpenDialog())" title="Delete Receipt">
-    <i class="fas fa-trash-alt" aria-hidden="true"></i> Delete Receipt
+    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+    @if (DialogLabel)
+    {
+        <span>Delete Receipt</span>
+    }
 </button>
 
 @if (DialogIsOpen)
 {
-    <Dialog Caption="Add Receipt"
+    <Dialog Caption="Delete Receipt"
         OnClose="@OnDialogClose"
         Type="Dialog.Category.DeleteNot">
         <Body>
             <p class="text-center">
-               Confirm delete receipt               
+                Confirm delete receipt
             </p>
         </Body>
     </Dialog>
@@ -23,11 +27,12 @@
 
     [Parameter] public EventCallback OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool DialogLabel { get; set; } = true;
 
-    private bool DialogIsOpen = false;    
+    private bool DialogIsOpen = false;
 
     private void OpenDialog()
-    {        
+    {
         DialogIsOpen = true;
     }
 
