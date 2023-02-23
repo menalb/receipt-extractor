@@ -2,6 +2,10 @@
 @using System.Globalization;
 @using ReceiptApp.Services;
 
+<section class="receipt-note">
+    <ReceiptApp.Components.Dialogs.NoteDialogButton Note="@ReceiptDetails.Note" OnConfirm="@UpdateNote" />
+</section>
+
 <section>
     <div class="form-row">
         <label for="Tags" class="col-sm-2 col-form-label">Tags:</label>
@@ -222,6 +226,11 @@
     {
         ReceiptItems = ReceiptItems.Where(item => item.Index != receiptItemIndex);
         UpdateTotal();
+    }
+
+    private void UpdateNote(string note)
+    {
+        ReceiptDetails.Note = note;
     }
 
     private string PriceAlterCss()

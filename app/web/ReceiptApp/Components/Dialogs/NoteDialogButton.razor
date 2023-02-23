@@ -1,0 +1,51 @@
+﻿@using ReceiptApp.Components;
+@using ReceiptApp.Services;
+
+<button class="btn btn-primary" type="button" title="Show Notes" @onclick="()=> OpenDialog()">
+    <i class="fas fa-sticky-note"></i>
+    Notes
+    <span class="sr-only">
+        Show notes
+    </span>
+</button>
+
+@if (DialogIsOpen)
+{
+    <Dialog Caption="Notes"
+        OnClose="@OnDialogClose"
+        Type="Dialog.Category.Okay">
+        <Body>
+            <div class="text-center mt-2">
+                <InputTextArea rows="4" class="w-75 p-3 h-50 d-inline-block" @bind-Value="Note" />
+            </div>
+        </Body>
+    </Dialog>
+}
+@code {
+
+    [Parameter] public string Note { get; set; } = "";
+    [Parameter] public EventCallback<string> OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool DialogIsOpen = false;
+
+    private void OpenDialog()
+    {
+        DialogIsOpen = true;
+    }
+
+    private void OnDialogClose(bool isOk)
+    {
+        if (isOk)
+        {
+            OnConfirm.InvokeAsync(Note);
+        }
+        else
+        {
+            OnCancel.InvokeAsync();
+        }
+        DialogIsOpen = false;
+    }
+
+
+}
