@@ -28,7 +28,7 @@ namespace ReceiptApp.Model
         public IEnumerable<ReceiptItem>? Items { get; set; }
         [JsonPropertyName("tags")]
         public IEnumerable<string>? Tags { get; set; }
-        [JsonPropertyName("note")]
+        [JsonPropertyName("notes")]
         public string? Note { get; set; }
     }
 

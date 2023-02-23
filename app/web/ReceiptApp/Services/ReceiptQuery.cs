@@ -12,7 +12,7 @@ namespace ReceiptApp.Services
         public ReceiptQuery(ReceiptApi api, IWebAssemblyHostEnvironment env)
         {
             _api = api;
-            _useMockedReceipts = env.IsDevelopment();
+            //_useMockedReceipts = env.IsDevelopment();
         }
 
         public async Task<IEnumerable<ReceiptSummary>> GetAll(DateTime? from = null)
