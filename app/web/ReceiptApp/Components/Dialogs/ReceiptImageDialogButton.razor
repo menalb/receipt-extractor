@@ -1,21 +1,17 @@
 ﻿@using ReceiptApp.Components;
 
-<button type="button" class="btn btn-danger" @onclick="@(e=>OpenDialog())" title="Delete Receipt">
-    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-    @if (DialogLabel)
-    {
-        <span>Delete Receipt</span>
-    }
+<button type="button" class="btn btn-primary" @onclick="@(e=>OpenDialog())" title="Show Image">    
+    <i class="fas fa-image" aria-hidden="true"></i>
 </button>
 
 @if (DialogIsOpen)
 {
-    <Dialog Caption="Delete Receipt"
+    <Dialog Caption="Receipt Image"
         OnClose="@OnDialogClose"
-        Type="Dialog.Category.DeleteNot">
+        Type="Dialog.Category.Okay">
         <Body>
             <p class="text-center">
-                Confirm delete receipt
+                <ReceiptImage ReceiptId="@ReceiptId" />
             </p>
         </Body>
     </Dialog>
@@ -24,7 +20,7 @@
 
     [Parameter] public EventCallback OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
-    [Parameter] public bool DialogLabel { get; set; } = true;
+    [Parameter] public string ReceiptId { get; set; } = "";
 
     private bool DialogIsOpen = false;
 
