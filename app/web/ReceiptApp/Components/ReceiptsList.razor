@@ -1,11 +1,7 @@
 ﻿@using ReceiptApp.Model;
 @using System.Globalization;
 
-<div class="search d-none d-sm-block">
-    <input type="text" @bind-value="SearchText" placeholder="Search.." @bind-value:event="oninput">
-</div>
-
-@foreach (var month in FilteredReceipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
+@foreach (var month in Receipts.GroupBy(r => new { month = r.day.Month, year = r.day.Year }))
 {
     <h3 class="tableHeader">
         <span>
@@ -23,14 +19,13 @@
 
     [Parameter]
     public EventCallback<string> OnSelectedReceipt { get; set; }
-
-    private string SearchText = "";
-    private IEnumerable<ReceiptListItem> FilteredReceipts =>
-    Receipts.Where(r => Compare(r.shop, SearchText)
-        || Compare(r.day.ToShortDateString(), SearchText)
-        || Compare(string.Join("", r.tags), SearchText)
-        || Compare(r.total.ToString(), SearchText)
-    );
+    
+    //private IEnumerable<ReceiptListItem> FilteredReceipts =>
+    //Receipts.Where(r => Compare(r.shop, SearchText)
+    //    || Compare(r.day.ToShortDateString(), SearchText)
+    //    || Compare(string.Join("", r.tags), SearchText)
+    //    || Compare(r.total.ToString(), SearchText)
+    //);
 
     private string FormatMonthName(int month, int year)
     =>
@@ -40,9 +35,9 @@
     =>
     $"€{items.Sum(i => i.total)}";
 
-    private static bool Compare(string s1, string s2)
-    =>
-    s1.Contains(s2, StringComparison.InvariantCultureIgnoreCase);
+    //private static bool Compare(string s1, string s2)
+    //=>
+    //s1.Contains(s2, StringComparison.InvariantCultureIgnoreCase);
 
     private async Task SelectReceipt(string id)
     {        
