@@ -17,6 +17,13 @@
 }
 else
 {
+    @if (isUpdating)
+    {
+        <section class="position-absolute w-100">
+            <Loader ShowText="false" />
+            <span class="sr-only">Saving changes</span>
+        </section>
+    }
     <EditForm EditContext="@editContext" OnSubmit="@HandleSubmit">
 
         <div class="position-relative">
@@ -32,15 +39,9 @@ else
                     </span>
                 </button>
                 <span>
-                    <ReceiptImageDialogButton ReceiptId="@ReceiptId"/>                 
+                    <ReceiptImageDialogButton ReceiptId="@ReceiptId" />
                 </span>
-
-                @if (isUpdating)
-                {
-                    <span class="spinner-border text-info" role="status" title="Saving changes">
-                        <span class="sr-only">Saving changes</span>
-                    </span>
-                }
+           
                 <button type="submit" class="btn btn-link" disabled="@isUpdating">
                     <i class="fas fa-save" aria-hidden="true"></i>
                     <span class="sr-only">
@@ -77,9 +78,8 @@ else
     private ReceiptDetails? receiptDetails;
 
     private bool isLoading = false;
-    private EditContext? editContext;
     private bool isUpdating = false;
-
+    private EditContext? editContext;    
 
     private bool ShowImage = false;
 
