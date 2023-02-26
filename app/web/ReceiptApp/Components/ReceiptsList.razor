@@ -18,14 +18,7 @@
     public IEnumerable<ReceiptListItem> Receipts { get; set; } = new List<ReceiptListItem>();
 
     [Parameter]
-    public EventCallback<string> OnSelectedReceipt { get; set; }
-    
-    //private IEnumerable<ReceiptListItem> FilteredReceipts =>
-    //Receipts.Where(r => Compare(r.shop, SearchText)
-    //    || Compare(r.day.ToShortDateString(), SearchText)
-    //    || Compare(string.Join("", r.tags), SearchText)
-    //    || Compare(r.total.ToString(), SearchText)
-    //);
+    public EventCallback<string> OnSelectedReceipt { get; set; }      
 
     private string FormatMonthName(int month, int year)
     =>
@@ -34,10 +27,6 @@
     private string FormatTotal(IEnumerable<ReceiptListItem> items)
     =>
     $"€{items.Sum(i => i.total)}";
-
-    //private static bool Compare(string s1, string s2)
-    //=>
-    //s1.Contains(s2, StringComparison.InvariantCultureIgnoreCase);
 
     private async Task SelectReceipt(string id)
     {        
