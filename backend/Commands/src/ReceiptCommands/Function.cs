@@ -8,6 +8,7 @@ using Amazon.DynamoDBv2;
 using ReceiptCommand.Model;
 using ReceiptCommands.Handlers;
 using Microsoft.Extensions.DependencyInjection;
+using ReceiptCommands.HttpUtils;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -43,14 +44,14 @@ public class Functions
 
         if (!IsAuthorized(request))
         {
-            return MethodNotAllowed;
+            return ApiGatewayResponse.MethodNotAllowed();
         }
         
         (bool isValid, ParsedPutRequest parsed) = ParsePutRequest(request);
 
         if (!isValid)
         {
-            return BadRequest;
+            return ApiGatewayResponse.BadRequest();
         }
 
         using (var scope = _serviceProvider.CreateScope())
@@ -58,9 +59,9 @@ public class Functions
             var updateCommadHandler = scope
                 .ServiceProvider
                 .GetRequiredService<ICommandHandler<UpdateReceiptCommand, ReceiptId>>();
-            await updateCommadHandler.Handle(parsed.userId, parsed.command);
+            await updateCommadHandler.Handle(parsed.UserId, parsed.Command);
         }
-        return OK;
+        return ApiGatewayResponse.OK();
     }
 
     /// <summary>
@@ -74,7 +75,7 @@ public class Functions
 
         if (!IsAuthorized(request))
         {
-            return MethodNotAllowed;
+            return ApiGatewayResponse.MethodNotAllowed();
         }
 
         (bool isValid, ParsedPostRequest parsed) = ParsePostRequest(request);
@@ -83,7 +84,7 @@ public class Functions
 
         if (!isValid)
         {
-            return BadRequest;
+            return ApiGatewayResponse.BadRequest();
         }
 
         using (var scope = _serviceProvider.CreateScope())
@@ -92,12 +93,12 @@ public class Functions
                 .ServiceProvider
                 .GetRequiredService<ICommandHandler<RegisterReceiptCommand, ReceiptId>>();
             
-            var id = await registerCommadHandler.Handle(parsed.userId, parsed.command);
+            var id = await registerCommadHandler.Handle(parsed.UserId, parsed.Command);
 
             context.Logger.LogLine("id: " + id);
         }        
 
-        return OK;
+        return ApiGatewayResponse.OK();
     }
 
     private static bool IsAuthorized(APIGatewayProxyRequest request) =>
@@ -148,22 +149,11 @@ public class Functions
             : null);
     }
 
-    record ParsedPostRequest(string userId, RegisterReceiptCommand command);
-    record ParsedPutRequest(string userId, UpdateReceiptCommand command);
-    public APIGatewayProxyResponse OK = BuildResponse(HttpStatusCode.OK);
-    public APIGatewayProxyResponse MethodNotAllowed = BuildResponse(HttpStatusCode.MethodNotAllowed);
-    public APIGatewayProxyResponse BadRequest = BuildResponse(HttpStatusCode.BadRequest);
+    record ParsedPostRequest(string UserId, RegisterReceiptCommand Command);
+    record ParsedPutRequest(string UserId, UpdateReceiptCommand Command);
+    
 
-    public static APIGatewayProxyResponse BuildResponse(HttpStatusCode statusCode) => new()
-    {
-        StatusCode = (int)statusCode,
-        Headers = new Dictionary<string, string>
-        {
-            { "Content-Type", "application/json" } ,
-            {"Access-Control-Allow-Origin", "*"},
-            {"Access-Control-Allow-Methods", "*"},
-        }
-    };    
+       
 
     private void ConfigureServices()
     {
