@@ -4,7 +4,7 @@ using Amazon.DynamoDBv2.DataModel;
 namespace ReceiptCommand.Model;
 
 [DynamoDBTable("receipts-items")]
-public class UpdateReceiptDetails
+public class SaveReceiptDetails
 {        
     [DynamoDBProperty("receipt_id")]
     [DynamoDBRangeKey]

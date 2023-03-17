@@ -1,76 +1,25 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
+﻿using System.Threading.Tasks;
 using ReceiptCommand.Model;
-using System.Linq;
-using Amazon.DynamoDBv2.DataModel;
 
 namespace ReceiptCommands.Handlers;
 
-public class UpdateReceiptCommand
+public record UpdateReceiptCommand(string ReceiptId, ReceiptDetails ReceiptDetails);
+
+public class UpdateReceiptCommandHandler : BaseReceiptCommandHandler, ICommandHandler<UpdateReceiptCommand, ReceiptId>
 {
-    public UpdateReceiptCommand(string receiptId, ReceiptDetails receiptDetails)
+    private readonly ISaveReceiptsGateway _receiptGateway;
+
+    public UpdateReceiptCommandHandler(ISaveReceiptsGateway receiptGateway)
     {
-        ReceiptId = receiptId;
-        ReceiptDetails = receiptDetails;
+        _receiptGateway = receiptGateway;
     }
 
-    public string ReceiptId { get; }
-    public ReceiptDetails ReceiptDetails { get; }
-}
-public class UpdateReceiptCommandHandler : ICommandHandler<UpdateReceiptCommand, string>
-{
-    private readonly IAmazonDynamoDB _dynamoDBClient;
-
-    public UpdateReceiptCommandHandler(IAmazonDynamoDB db)
+    public async Task<ReceiptId> Handle(string userId, UpdateReceiptCommand command)
     {
-        _dynamoDBClient = db;
-    }
+        var updateReceipt = MapCommand(userId, command.ReceiptId, command.ReceiptDetails);
 
-    public async Task<string> Handle(string userId, UpdateReceiptCommand command)
-    {
-        string receiptId = command.ReceiptId;
-        ReceiptDetails receipt = command.ReceiptDetails;
+        await _receiptGateway.SaveAsync(updateReceipt);
 
-        var ctx = new DynamoDBContext(_dynamoDBClient);
-
-        var shop = receipt.Shop == null ?
-                   new UpdateShop() :
-                   new UpdateShop
-                   {
-                       Name = receipt.Shop.Name,
-                       Owner = receipt.Shop.Owner,
-                       Address = receipt.Shop.Address,
-                       City = receipt.Shop.City,
-                       Phone = receipt.Shop.Phone,
-                       Vat = receipt.Shop.Vat
-                   };
-
-        var items = receipt.Items == null ?
-                    new List<UpdateReceiptItem>() :
-                    receipt.Items.Select(item => new UpdateReceiptItem
-                    {
-                        Name = item.Name,
-                        Price = item.Price,
-                        VAT = item.VAT
-                    });
-
-        var updateReceipt = new UpdateReceiptDetails
-        {
-            Id = receiptId,
-            UserId = userId,
-            Day = receipt.Day,
-            JobId = receipt.JobId,
-            Total = receipt.Total,
-            TotalVAT = receipt.TotalVAT,
-            Shop = shop,
-            Items = items.ToList(),
-            Tags = receipt.Tags != null ? receipt.Tags.ToList() : new List<string>(),
-            Notes = receipt.Notes
-        };
-
-        await ctx.SaveAsync(updateReceipt);
-
-        return receiptId;
+        return new ReceiptId(command.ReceiptId);
     }
 }

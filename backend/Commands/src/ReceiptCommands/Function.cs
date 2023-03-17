@@ -7,6 +7,7 @@ using Amazon.Lambda.APIGatewayEvents;
 using Amazon.DynamoDBv2;
 using ReceiptCommand.Model;
 using ReceiptCommands.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -15,27 +16,22 @@ namespace ReceiptCommands;
 
 public class Functions
 {
-    private readonly ICommandHandler<UpdateReceiptCommand, string> _updateCommadHandler;
-    private readonly ICommandHandler<RegisterReceiptCommand, string> _registerCommadHandler;
+    private readonly IReceiptIdGenerator _receiptIdGenerator = new ReceiptIdGenerator();
+    private readonly ServiceProvider _serviceProvider;
 
     /// <summary>
     /// Default constructor that Lambda will invoke.
     /// </summary>
     public Functions()
     {
-        _updateCommadHandler = new UpdateReceiptCommandHandler(new AmazonDynamoDBClient());
-        _registerCommadHandler = new RegisterReceiptCommandHandler(new AmazonDynamoDBClient());
+        ConfigureServices();
     }
 
-    public Functions(
-        ICommandHandler<UpdateReceiptCommand, string> updateCommadHandler,
-        ICommandHandler<RegisterReceiptCommand, string> registerCommadHandler
-        )
+    public Functions(ServiceProvider serviceProvider)
     {
-        _updateCommadHandler = updateCommadHandler;
-        _registerCommadHandler = registerCommadHandler;
+        _serviceProvider = serviceProvider;
     }
-
+   
     /// <summary>
     /// A Lambda function to respond to HTTP Get methods from API Gateway
     /// </summary>
@@ -57,8 +53,13 @@ public class Functions
             return BadRequest;
         }
 
-        await _updateCommadHandler.Handle(parsed.userId, parsed.command);
-
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var updateCommadHandler = scope
+                .ServiceProvider
+                .GetRequiredService<ICommandHandler<UpdateReceiptCommand, ReceiptId>>();
+            await updateCommadHandler.Handle(parsed.userId, parsed.command);
+        }
         return OK;
     }
 
@@ -84,10 +85,17 @@ public class Functions
         {
             return BadRequest;
         }
-        
-        var id = await _registerCommadHandler.Handle(parsed.userId, parsed.command);
 
-        context.Logger.LogLine("id: " + id);
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var registerCommadHandler = scope
+                .ServiceProvider
+                .GetRequiredService<ICommandHandler<RegisterReceiptCommand, ReceiptId>>();
+            
+            var id = await registerCommadHandler.Handle(parsed.userId, parsed.command);
+
+            context.Logger.LogLine("id: " + id);
+        }        
 
         return OK;
     }
@@ -155,5 +163,17 @@ public class Functions
             {"Access-Control-Allow-Origin", "*"},
             {"Access-Control-Allow-Methods", "*"},
         }
-    };
+    };    
+
+    private void ConfigureServices()
+    {
+        var serviceCollection = new ServiceCollection();
+
+        serviceCollection.AddScoped<IAmazonDynamoDB, AmazonDynamoDBClient>();
+        serviceCollection.AddScoped<ISaveReceiptsGateway, DynamoDBReceiptsGateway>();
+
+        serviceCollection.AddScoped<ICommandHandler<RegisterReceiptCommand, ReceiptId>, RegisterReceiptCommandHandler>();
+
+        serviceCollection.AddScoped<ICommandHandler<UpdateReceiptCommand, ReceiptId>, UpdateReceiptCommandHandler>();        
+    }
 }
