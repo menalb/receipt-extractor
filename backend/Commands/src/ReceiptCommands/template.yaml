@@ -33,7 +33,7 @@ Resources:
     Properties:
       CodeUri: ""
       Handler: "ReceiptCommands::ReceiptCommands.Functions::Put"
-      Runtime: dotnet6
+      Runtime: dotnet8
       MemorySize: 256
       Timeout: 30
       Environment:

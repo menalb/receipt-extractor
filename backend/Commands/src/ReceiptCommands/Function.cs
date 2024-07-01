@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 
 using Amazon.Lambda.Core;
@@ -25,14 +23,14 @@ public class Functions
     /// </summary>
     public Functions()
     {
-        ConfigureServices();
+        _serviceProvider = ConfigureServices();
     }
 
     public Functions(ServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
-   
+
     /// <summary>
     /// A Lambda function to respond to HTTP Get methods from API Gateway
     /// </summary>
@@ -46,7 +44,7 @@ public class Functions
         {
             return ApiGatewayResponse.MethodNotAllowed();
         }
-        
+
         (bool isValid, ParsedPutRequest parsed) = ParsePutRequest(request);
 
         if (!isValid)
@@ -56,10 +54,10 @@ public class Functions
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var updateCommadHandler = scope
+            var updateCommandHandler = scope
                 .ServiceProvider
                 .GetRequiredService<ICommandHandler<UpdateReceiptCommand, ReceiptId>>();
-            await updateCommadHandler.Handle(parsed.UserId, parsed.Command);
+            await updateCommandHandler.Handle(parsed.UserId, parsed.Command);
         }
         return ApiGatewayResponse.OK();
     }
@@ -89,14 +87,14 @@ public class Functions
 
         using (var scope = _serviceProvider.CreateScope())
         {
-            var registerCommadHandler = scope
+            var registerCommandHandler = scope
                 .ServiceProvider
                 .GetRequiredService<ICommandHandler<RegisterReceiptCommand, ReceiptId>>();
-            
-            var id = await registerCommadHandler.Handle(parsed.UserId, parsed.Command);
+
+            var id = await registerCommandHandler.Handle(parsed.UserId, parsed.Command);
 
             context.Logger.LogLine("id: " + id);
-        }        
+        }
 
         return ApiGatewayResponse.OK();
     }
@@ -151,11 +149,8 @@ public class Functions
 
     record ParsedPostRequest(string UserId, RegisterReceiptCommand Command);
     record ParsedPutRequest(string UserId, UpdateReceiptCommand Command);
-    
 
-       
-
-    private void ConfigureServices()
+    private static ServiceProvider ConfigureServices()
     {
         var serviceCollection = new ServiceCollection();
 
@@ -164,6 +159,8 @@ public class Functions
 
         serviceCollection.AddScoped<ICommandHandler<RegisterReceiptCommand, ReceiptId>, RegisterReceiptCommandHandler>();
 
-        serviceCollection.AddScoped<ICommandHandler<UpdateReceiptCommand, ReceiptId>, UpdateReceiptCommandHandler>();        
+        serviceCollection.AddScoped<ICommandHandler<UpdateReceiptCommand, ReceiptId>, UpdateReceiptCommandHandler>();
+
+        return serviceCollection.BuildServiceProvider();
     }
 }
