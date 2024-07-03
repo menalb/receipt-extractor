@@ -17,8 +17,9 @@ namespace ReceiptApp.Images.Functions
     {
 
         private readonly string BucketName = Environment.GetEnvironmentVariable("BucketName");
+        private readonly string ThumbnailsBucketName = Environment.GetEnvironmentVariable("ThumbnailsBucketName");
 
-        private readonly IImagesGateway _imageGateway;
+        private readonly IImagePresignedURLGateway _imageGateway;
 
         /// <summary>
         /// Default constructor that Lambda will invoke.
@@ -27,16 +28,16 @@ namespace ReceiptApp.Images.Functions
         {
             var s3Client = new AmazonS3Client();
             var dynamoDbClient = new AmazonDynamoDBClient();
-            _imageGateway = new S3ImagesGateway(s3Client, BucketName, dynamoDbClient);
+            _imageGateway = new S3ImagePresignedURLGateway(s3Client, BucketName, ThumbnailsBucketName, dynamoDbClient);
         }
 
         public Functions(IAmazonS3 s3Client, IAmazonDynamoDB dynamoDbClient)
         {
-            _imageGateway = new S3ImagesGateway(s3Client, BucketName, dynamoDbClient);
+            _imageGateway = new S3ImagePresignedURLGateway(s3Client, BucketName, ThumbnailsBucketName, dynamoDbClient);
         }
 
         /// <summary>
-        /// A Lambda function to respond to HTTP Get methods from API Gateway
+        /// Generates PreSigned URL for Image Upload
         /// </summary>
         /// <param name="request"></param>
         /// <returns>The API Gateway response.</returns>
@@ -65,7 +66,7 @@ namespace ReceiptApp.Images.Functions
         }
 
         /// <summary>
-        /// A Lambda function to respond to HTTP Get methods from API Gateway
+        /// Get PreSignedURL to display image
         /// </summary>
         /// <param name="request"></param>
         /// <returns>The API Gateway response.</returns>
@@ -81,11 +82,17 @@ namespace ReceiptApp.Images.Functions
             }
 
             var userId = request.RequestContext.Authorizer.Claims["sub"];
-            var receiptId = request.PathParameters["receiptid"]; 
-            
+            var receiptId = request.PathParameters["receiptid"];
+
             try
             {
                 var response = await _imageGateway.GetImageURL(userId, receiptId);
+
+                if(response is null)
+                {
+                    context.Logger.LogLine($"File for receipt {receiptId} not found");
+                    return NotFound;
+                }
 
                 context.Logger.LogLine("key: " + response.URL);
 
@@ -93,13 +100,12 @@ namespace ReceiptApp.Images.Functions
 
                 return OK(message);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 context.Logger.LogError(e.Message);
                 return ServerError;
             }
         }
-
 
         private static APIGatewayProxyResponse OK(ApiResponse message) =>
             new()
@@ -126,7 +132,19 @@ namespace ReceiptApp.Images.Functions
                 }
             };
 
-        private static APIGatewayProxyResponse ServerError=>
+        private static APIGatewayProxyResponse NotFound =>
+            new()
+            {
+                StatusCode = (int)HttpStatusCode.NotFound,
+                Headers = new Dictionary<string, string>
+                {
+                    { "Content-Type", "application/json" },
+                    {"Access-Control-Allow-Origin", "*"},
+                    {"Access-Control-Allow-Methods", "*"},
+                }
+            };
+
+        private static APIGatewayProxyResponse ServerError =>
            new()
            {
                StatusCode = (int)HttpStatusCode.InternalServerError,

@@ -2,7 +2,7 @@
 
 namespace ReceiptApp.Images.Functions;
 
-public interface IImagesGateway
+public interface IImagePresignedURLGateway
 {
     string GetUploadURL(string imageName);
     Task<GetImageURLResponse> GetImageURL(string userId, string receiptId);

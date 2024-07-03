@@ -8,7 +8,7 @@
   "profile": "",
   "region": "",
   "configuration": "Release",
-  "function-runtime": "dotnet6",
+  "function-runtime": "dotnet8",
   "s3-prefix": "ReceiptUpload/",
   "template": "serverless.template",
   "template-parameters": ""

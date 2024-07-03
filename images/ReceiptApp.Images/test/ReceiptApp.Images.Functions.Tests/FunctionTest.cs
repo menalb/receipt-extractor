@@ -4,6 +4,7 @@ using Amazon.Lambda.APIGatewayEvents;
 using Moq;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.DynamoDBv2;
 
 namespace ReceiptApp.Images.Functions.Tests
 {
@@ -64,12 +65,14 @@ namespace ReceiptApp.Images.Functions.Tests
                 .Setup(c => c.GetPreSignedURL(It.IsAny<GetPreSignedUrlRequest>()))
                 .Returns(expectedURL);
 
+            var dynamoDBClient = new Mock<IAmazonDynamoDB>();
+
             var authorizer = new APIGatewayCustomAuthorizerContext
             {
                 Claims = new System.Collections.Generic.Dictionary<string, string> { { "sub", "123" } }
             };
 
-            var functions = new Functions(s3Client.Object);
+            var functions = new Functions(s3Client.Object, dynamoDBClient.Object);
 
             var request = new APIGatewayProxyRequest
             {

@@ -5,9 +5,15 @@ Parameters:
   AuthorizerARN:
     Type: String
     Description: Cognito ARN  
-  BucketName:
+  ImagesBucketName:
     Type: String
-    Description: Bucket Name
+    Description: Images Bucket Name
+  ThumbnailsBucketName:
+    Type: String
+    Description: Thumbnails Bucket Name
+  ReceiptsTableName:
+    Type: String
+    Description: Receipts Table Name
 
 Resources:
 
@@ -31,17 +37,17 @@ Resources:
     Properties:
       CodeUri: ""
       Handler: "ReceiptApp.Images.Functions::ReceiptApp.Images.Functions.Functions::GetForUpload"
-      Runtime: dotnet6
-      MemorySize: 256      
+      Runtime: dotnet8
+      MemorySize: 256
       Environment:
         Variables:
-          BucketName: !Ref BucketName
+          BucketName: !Ref ImagesBucketName
       Policies:
         - S3WritePolicy:
-            BucketName: !Ref BucketName
+            BucketName: !Ref ImagesBucketName
         - Statement:
             - Effect: Allow
-              Resource: !Sub "arn:aws:s3:::${BucketName}/"
+              Resource: !Sub "arn:aws:s3:::${ImagesBucketName}/"
               Action:
                 - s3:putObjectAcl
       Events:
@@ -57,24 +63,25 @@ Resources:
     Properties:
         CodeUri: ""
         Handler: "ReceiptApp.Images.Functions::ReceiptApp.Images.Functions.Functions::GetImage"
-        Runtime: dotnet6
+        Runtime: dotnet8
         MemorySize: 256
         Timeout: 30
         Environment:
           Variables:
-            BucketName: !Ref BucketName
+            ThumbnailsBucketName: !Ref ThumbnailsBucketName
         Policies:
             - DynamoDBReadPolicy:
-                TableName: receipt-analyzer-raw
-            - DynamoDBReadPolicy:
-                TableName: receipts-analyzer-jobs
+                TableName: !Ref ReceiptsTableName
             - S3WritePolicy:
-                BucketName: !Ref BucketName
+                BucketName: !Ref ThumbnailsBucketName
             - Statement:
                 - Effect: Allow
-                  Resource: !Sub "arn:aws:s3:::${BucketName}/"
+                  Resource: 
+                   - !Sub "arn:aws:s3:::${ThumbnailsBucketName}/"
+                   - !Sub "arn:aws:s3:::${ThumbnailsBucketName}/*"
                   Action:
-                    - s3:*
+                    - s3:GetObject
+                    - s3:ListBucket
         Events:
           UploadAssetAPI:
             Type: HttpApi
