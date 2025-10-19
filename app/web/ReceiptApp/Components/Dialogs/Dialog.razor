@@ -47,6 +47,16 @@
                             Don't Delete
                         </button>
                         break;
+                    case Category.UnsavedChanges:
+                        <button type="button" class="btn btn-danger"
+                        @onclick=@Ok>
+                            Discard Changes
+                        </button>
+                        <button type="button" class="btn btn-warning"
+                        @onclick="@Cancel">
+                            Cancel
+                        </button>
+                        break;
                 }
             </div>
         </div>
@@ -71,6 +81,7 @@
     {
         Okay,
         SaveNot,
-        DeleteNot
+        DeleteNot,
+        UnsavedChanges
     }
 }

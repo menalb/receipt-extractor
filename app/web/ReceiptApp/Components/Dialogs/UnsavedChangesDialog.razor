@@ -1,0 +1,39 @@
+﻿@using ReceiptApp.Components;
+
+@if (DialogIsOpen)
+{
+    <Dialog Caption="Unsaved changes"
+        OnClose="@OnDialogClose"
+        Type="Dialog.Category.UnsavedChanges">
+        <Body>
+            <p class="text-center">
+                Unsaved Changes, are you sure?
+            </p>
+        </Body>
+    </Dialog>
+}
+@code {
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool DialogLabel { get; set; } = true;
+    [Parameter]  public bool DialogIsOpen { get; set; }
+
+    private void OpenDialog()
+    {
+        DialogIsOpen = true;
+    }
+
+    private void OnDialogClose(bool isOk)
+    {
+        if (isOk)
+        {
+            OnConfirm.InvokeAsync();
+        }
+        else
+        {
+            OnCancel.InvokeAsync();
+        }
+        DialogIsOpen = false;
+    }
+}

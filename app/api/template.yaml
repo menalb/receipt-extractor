@@ -26,6 +26,9 @@ Parameters:
   UploadReceiptLambdaArn:
     Type: String
     Description: Get Upload PresignedUrl Receipt Lambda ARN
+  GetReceiptImageLambdaArn:
+    Type: String
+    Description: Get Receipt Image PresignedUrl Receipt Lambda ARN
 
 Globals:
   Api:
@@ -57,7 +60,8 @@ Resources:
                 Resource: 
                     - !Ref RegisterReceiptLambdaArn
                     - !Ref UpdateReceiptLambdaArn
-                    - !Ref UploadReceiptLambdaArn                    
+                    - !Ref UploadReceiptLambdaArn
+                    - !Ref GetReceiptImageLambdaArn
               - Effect: Allow
                 Action:
                   - 'dynamodb:Query'
@@ -164,7 +168,69 @@ Resources:
         Uri: !Sub
           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
           - lambdaArn: !Ref UploadReceiptLambdaArn
-            
+
+
+  GetSignedUrlGetImageReceiptResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref GetSignedUrlUploadReceiptResource
+      PathPart: "{receiptid}"
+  GetSignedUrlGetImageReceiptMethodOptions:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref GetSignedUrlGetImageReceiptResource
+      HttpMethod: OPTIONS
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: Empty
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
+
+  GetSignedUrlGetImageReceiptMethodGet:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref GetSignedUrlGetImageReceiptResource
+      HttpMethod: GET
+      ApiKeyRequired: false
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoReceiptAuthorizer
+      RequestParameters:
+        method.request.path.receiptid: true
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !GetAtt ReceiptsAPIGatewayRole.Arn
+        # Should always be POST when integrating with AWS services
+        IntegrationHttpMethod: POST
+        # More info: https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !Ref GetReceiptImageLambdaArn
+  
+
+
+
+
+
   ReceiptsMethodOptions:
     Type: 'AWS::ApiGateway::Method'
     Properties:
@@ -487,6 +553,14 @@ Resources:
       FunctionName: !Ref UploadReceiptLambdaArn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/GET/upload-receipt/*
+
+  GetSignedUrlGetImageReceiptLambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetReceiptImageLambdaArn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/GET/receipt-image/*
 
   ApiDeployment:
     Type: 'AWS::ApiGateway::Deployment'

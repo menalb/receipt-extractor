@@ -25,6 +25,6 @@ namespace ReceiptApp.Services
         }
 
         //TODO: do it for multiple files
-        //TODO: change receiptId fron string to message
+        //TODO: change receiptId from string to message
     }
 }

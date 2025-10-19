@@ -12,7 +12,7 @@ namespace ReceiptApp.Services
         public ReceiptQuery(ReceiptApi api, IWebAssemblyHostEnvironment env)
         {
             _api = api;
-            //_useMockedReceipts = env.IsDevelopment();
+			_useMockedReceipts = env.IsDevelopment();
         }
 
         public async Task<IEnumerable<ReceiptSummary>> GetAll(DateTime? from = null)
@@ -20,7 +20,7 @@ namespace ReceiptApp.Services
             var dayFrom = from ?? DateTime.Now
                 .AddDays(-30);
             var fromParam = dayFrom.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-            var toParam = dayFrom.AddMonths(1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toParam = dayFrom.AddDays(31).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
             if (_useMockedReceipts)
             {

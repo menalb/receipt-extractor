@@ -15,7 +15,6 @@ namespace ReceiptCommands;
 
 public class Functions
 {
-    private readonly IReceiptIdGenerator _receiptIdGenerator = new ReceiptIdGenerator();
     private readonly ServiceProvider _serviceProvider;
 
     /// <summary>
@@ -153,9 +152,10 @@ public class Functions
     private static ServiceProvider ConfigureServices()
     {
         var serviceCollection = new ServiceCollection();
-
+        
         serviceCollection.AddScoped<IAmazonDynamoDB, AmazonDynamoDBClient>();
         serviceCollection.AddScoped<ISaveReceiptsGateway, DynamoDBReceiptsGateway>();
+        serviceCollection.AddScoped<IReceiptIdGenerator>(ctx => new ReceiptIdGenerator());
 
         serviceCollection.AddScoped<ICommandHandler<RegisterReceiptCommand, ReceiptId>, RegisterReceiptCommandHandler>();
 

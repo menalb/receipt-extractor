@@ -9,7 +9,10 @@
 @inject ReceiptExport ExportService
 @inject IJSRuntime JS
 @inject NavigationManager NavManager
+
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@implements IDisposable
 
 @if (isLoading)
 {
@@ -41,7 +44,7 @@ else
                 <span>
                     <ReceiptImageDialogButton ReceiptId="@ReceiptId" />
                 </span>
-           
+
                 <button type="submit" class="btn btn-link" disabled="@isUpdating">
                     <i class="fas fa-save" aria-hidden="true"></i>
                     <span class="sr-only">
@@ -71,19 +74,57 @@ else
     </EditForm>
 }
 
+<UnsavedChangesDialog DialogIsOpen="@ShowConfirmExitDialog" OnConfirm="@ConfirmUnsaved" />
+
 @code {
 
     [Parameter]
     public string ReceiptId { get; set; } = "";
+
+    private bool AnyUnsavedChanges = false;
+
     private ReceiptDetails? receiptDetails;
 
     private bool isLoading = false;
     private bool isUpdating = false;
-    private EditContext? editContext;    
+    private EditContext? editContext;
 
     private bool ShowImage = false;
 
     private bool ShowFullPage = true;
+    private bool ShowConfirmExitDialog = false;
+    private string NextLocation = "";
+
+    private IDisposable? registration;
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            registration =
+                NavManager.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (AnyUnsavedChanges)
+        {
+            ShowConfirmExitDialog = true;
+            NextLocation = context.TargetLocation;
+            context.PreventNavigation();
+            StateHasChanged();
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    private void ConfirmUnsaved()
+    {
+        AnyUnsavedChanges = false;
+        NavManager.NavigateTo(NextLocation);
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -99,6 +140,8 @@ else
         if (receiptDetails is not null)
         {
             editContext = new(receiptDetails);
+
+            editContext.OnFieldChanged += (o, e) => AnyUnsavedChanges = true;
         }
         isLoading = false;
     }
@@ -133,11 +176,23 @@ else
 
             await Command.Save(ReceiptId, receiptDetails);
 
+            AnyUnsavedChanges = false;
+
             isUpdating = false;
         }
         else
         {
 
         }
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (editContext is not null)
+        {
+            editContext.OnFieldChanged -= (o, e) => AnyUnsavedChanges = true;
+        }
+
+        registration?.Dispose();
     }
 }
