@@ -17,6 +17,20 @@ Parameters:
     MaxLength: 50
     AllowedPattern: ^[A-Za-z_-]+$
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
+  MongoConnectionStringParameterName:
+    Type: String
+    Description: >
+      Name (path) of the SSM SecureString parameter holding the MongoDB Atlas connection string.
+      Not the secret itself - the actual value is set out-of-band via Parameter Store, never committed here.
+    Default: /receipt-extractor/mongo/connection-string
+  MongoDatabaseName:
+    Type: String
+    Description: MongoDB Atlas database name used for the connections collection
+    Default: receipt-extractor
+  MongoConnectionsCollectionName:
+    Type: String
+    Description: MongoDB Atlas collection name used to store WebSocket connection identifiers
+    Default: connections
 
 Resources:
   ReceiptExtractorWebSocket:
@@ -44,7 +58,7 @@ Resources:
       CodeUri: authorizer/
       Handler: app.lambdaHandler
       MemorySize: 256
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Architectures:
         - x86_64 
       Policies:
@@ -160,13 +174,19 @@ Resources:
       CodeUri: onconnect/
       Handler: app.handler
       MemorySize: 256
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref NotificationTableName
+          MONGO_CONNECTION_STRING_PARAM: !Ref MongoConnectionStringParameterName
+          MONGO_DATABASE_NAME: !Ref MongoDatabaseName
+          MONGO_COLLECTION_NAME: !Ref MongoConnectionsCollectionName
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName: !Ref NotificationTableName
+      - Statement:
+        - Effect: Allow
+          Action:
+          - ssm:GetParameter
+          Resource:
+          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MongoConnectionStringParameterName}
   OnConnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -181,13 +201,19 @@ Resources:
       CodeUri: ondisconnect/
       Handler: app.handler
       MemorySize: 256
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref NotificationTableName
+          MONGO_CONNECTION_STRING_PARAM: !Ref MongoConnectionStringParameterName
+          MONGO_DATABASE_NAME: !Ref MongoDatabaseName
+          MONGO_COLLECTION_NAME: !Ref MongoConnectionsCollectionName
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName: !Ref NotificationTableName
+      - Statement:
+        - Effect: Allow
+          Action:
+          - ssm:GetParameter
+          Resource:
+          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MongoConnectionStringParameterName}
   OnDisconnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:

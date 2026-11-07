@@ -17,7 +17,7 @@ public class FunctionTest
                 {
                     Sns = new SNSEvent.SNSMessage()
                     {
-                        Message = "foobar"
+                        Message = "{\"userId\":\"\",\"receiptId\":\"\"}"
                     }
                 }
             }
@@ -32,6 +32,6 @@ public class FunctionTest
         var function = new Function();
         await function.FunctionHandler(snsEvent, context);
 
-        Assert.Contains("Processed record foobar", logger.Buffer.ToString());
+        Assert.Contains("Processed record {\"userId\":\"\",\"receiptId\":\"\"}", logger.Buffer.ToString());
     }
 }

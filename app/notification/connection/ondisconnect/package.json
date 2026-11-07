@@ -1,12 +1,12 @@
 {
     "name": "on-disconnect",
     "version": "1.0.0",
-    "description": "ondisconnect example for WebSockets on API Gateway",
-    "main": "src/app.js",
+    "description": "ondisconnect for WebSockets on API Gateway - removes the connection from MongoDB Atlas",
+    "main": "app.js",
     "author": "SAM CLI",
     "license": "MIT",
-    "dependencies": {},
-    "devDependencies": {
-        "aws-sdk": "^2.1445.0"
+    "dependencies": {
+        "@aws-sdk/client-ssm": "^3.609.0",
+        "mongodb": "^6.8.0"
     }
 }

@@ -7,10 +7,6 @@ Parameters:
     Type: String
     Description: Name of the topic of the notification
     MinLength: "0"
-  NotificationTableName:
-    Type: String
-    Description: Notification table name
-    MinLength: "0"
   NotificationApiUrl:
     Type: String
     Description: "Notification Api URL"
@@ -19,6 +15,21 @@ Parameters:
     Type: String
     Description: "Notification Api Id"
     MinLength : "0"
+  MongoConnectionStringParameterName:
+    Type: String
+    Description: >
+      Name (path) of the SSM SecureString parameter holding the MongoDB Atlas connection string.
+      Not the secret itself - the actual value is set out-of-band via Parameter Store, never committed here.
+      Must match the same parameter used by the receipt-analyzer-ws-connections stack.
+    Default: /receipt-extractor/mongo/connection-string
+  MongoDatabaseName:
+    Type: String
+    Description: MongoDB Atlas database name used for the connections collection
+    Default: receipt-extractor
+  MongoConnectionsCollectionName:
+    Type: String
+    Description: MongoDB Atlas collection name used to store WebSocket connection identifiers
+    Default: connections
 
 Resources:
   SNSNotificationTopic:
@@ -30,24 +41,29 @@ Resources:
     Type: "AWS::Serverless::Function"
     Properties:
       Handler: "notifier::notifier.Function::FunctionHandler"
-      Runtime: dotnet6
+      Runtime: dotnet8
       CodeUri: ""
       Description: Handle Notify result
       MemorySize: 256
       Timeout: 600
       Environment:
         Variables:
-          NOTIFICATION_TABLE_NAME: !Ref NotificationTableName
           NOTIFICATION_API_URL: !Ref NotificationApiUrl
+          MONGO_CONNECTION_STRING_PARAM: !Ref MongoConnectionStringParameterName
+          MONGO_DATABASE_NAME: !Ref MongoDatabaseName
+          MONGO_COLLECTION_NAME: !Ref MongoConnectionsCollectionName
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName: !Ref NotificationTableName
       - Statement:
         - Effect: Allow
           Action:
           - 'execute-api:ManageConnections'
           Resource:
           - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ReceiptExtractorWebSocketApiId}/*'
+        - Effect: Allow
+          Action:
+          - ssm:GetParameter
+          Resource:
+          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MongoConnectionStringParameterName}
 
   Subscription:
     Type: "AWS::SNS::Subscription"

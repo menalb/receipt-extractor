@@ -1,12 +1,12 @@
 {
     "name": "on-connect",
     "version": "1.0.0",
-    "description": "onconnect example for WebSockets on API Gateway",
-    "main": "src/app.js",
+    "description": "onconnect for WebSockets on API Gateway - writes the connection to MongoDB Atlas",
+    "main": "app.js",
     "author": "SAM CLI",
     "license": "MIT",
     "dependencies": {
-        "@aws-sdk/client-dynamodb": "^3.609.0",
-        "@aws-sdk/lib-dynamodb": "^3.610.0"
+        "@aws-sdk/client-ssm": "^3.609.0",
+        "mongodb": "^6.8.0"
     }
 }
